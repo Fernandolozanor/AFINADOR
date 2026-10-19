@@ -310,10 +310,9 @@ html, body {
   stroke-linecap: round;
 }
 
-/* Aguja */
-.gauge-needle {
-  transform-origin: 160px 180px;
-  transition: transform 0.08s linear;
+/* Aguja indicadora */
+.needle-group {
+  pointer-events: none;
 }
 
 .needle-body {
@@ -325,14 +324,20 @@ html, body {
 
 .needle-head {
   fill: #ffffff;
-  stroke: rgba(0, 0, 0, 0.5);
-  stroke-width: 1;
+  stroke: rgba(0, 0, 0, 0.4);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
 }
 
-.needle-pivot {
+.needle-pivot-fixed {
   fill: #1e293b;
-  stroke: rgba(255, 255, 255, 0.3);
+  stroke: rgba(255, 255, 255, 0.35);
   stroke-width: 2;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.needle-pivot-core {
+  fill: var(--color-accent);
 }
 
 /* Variaciones de color de la aguja según desviación */

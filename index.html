@@ -98,12 +98,14 @@
           <circle cx="160" cy="55" r="4" class="center-target-pip" />
           <line x1="160" y1="46" x2="160" y2="70" class="center-target-line" />
 
-          <!-- Aguja indicadora estilizada -->
-          <g id="gaugeNeedle" class="gauge-needle" transform="rotate(0 160 180)">
-            <line x1="160" y1="180" x2="160" y2="60" class="needle-body" />
-            <circle cx="160" cy="56" r="5" class="needle-head" />
-            <circle cx="160" cy="180" r="10" class="needle-pivot" />
+          <!-- Aguja indicadora directa (control trigonométrico por código, 100% libre de bugs de Safari) -->
+          <g id="needleGroup" class="needle-group">
+            <line id="needleBody" x1="160" y1="180" x2="160" y2="56" class="needle-body" />
+            <circle id="needleHead" cx="160" cy="56" r="5" class="needle-head" />
           </g>
+          <!-- Pivote central fijo en la base del arco (NUNCA se desplaza) -->
+          <circle cx="160" cy="180" r="7" class="needle-pivot-fixed" />
+          <circle cx="160" cy="180" r="3" class="needle-pivot-core" />
         </svg>
 
         <!-- Display Central de Notas -->
@@ -175,12 +177,12 @@
     </div>
   </div>
 
-  <script src="audio-processor.js?v=3.0"></script>
-  <script src="app.js?v=3.0"></script>
+  <script src="audio-processor.js?v=4.0"></script>
+  <script src="app.js?v=4.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=3.0').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=4.0').then(reg => {
           reg.update();
         }).catch(() => {});
       });

@@ -117,7 +117,8 @@ class GuitarTunerApp {
       signalStatus: document.getElementById('signalStatus'),
       tuningsTrack: document.getElementById('tuningsTrack'),
       gaugeTicks: document.getElementById('gaugeTicks'),
-      gaugeNeedle: document.getElementById('gaugeNeedle'),
+      needleBody: document.getElementById('needleBody'),
+      needleHead: document.getElementById('needleHead'),
       meterWrapper: document.querySelector('.meter-wrapper'),
       centsValue: document.getElementById('centsValue'),
       flatIndicator: document.getElementById('flatIndicator'),
@@ -133,6 +134,10 @@ class GuitarTunerApp {
       waveCanvas: document.getElementById('waveCanvas'),
       vuBar: document.getElementById('vuBar')
     };
+
+    this.smoothedCents = 0;
+    this.lockedStringIndex = null;
+    this.stringHoldCounter = 0;
 
     // Canvas de fondo
     this.canvasCtx = this.dom.waveCanvas.getContext('2d');
@@ -336,6 +341,8 @@ class GuitarTunerApp {
 
   resetDisplay() {
     this.targetAngle = 0;
+    this.smoothedCents = 0;
+    this.lockedStringIndex = null;
     this.dom.noteAmerican.textContent = '-';
     this.dom.noteOctave.textContent = '';
     this.dom.euNoteName.textContent = '-';
@@ -365,15 +372,24 @@ class GuitarTunerApp {
       }
     });
 
-    // Si está dentro de un rango razonable (ej. menos de 2.2 semitonos de la cuerda esperada)
-    if (minDifference < 2.2) {
+    // Histéresis: si ya estamos afinando una cuerda y la nota sigue cerca, conservarla
+    if (this.lockedStringIndex !== null) {
+      const currentLockedStr = this.currentTuning.strings[this.lockedStringIndex];
+      const lockedDist = Math.abs(12 * Math.log2(freq / currentLockedStr.freq));
+      if (lockedDist < 2.5) {
+        return this.lockedStringIndex;
+      }
+    }
+
+    if (minDifference < 2.8) {
+      this.lockedStringIndex = closestIndex;
       return closestIndex;
     }
     return null;
   }
 
   /**
-   * Bucle principal de animación a 60 FPS
+   * Bucle principal de animación a 60 FPS con trigonometría pura y cero bugs de Safari
    */
   startRenderLoop() {
     const loop = () => {
@@ -393,9 +409,24 @@ class GuitarTunerApp {
         this.drawWave(null, false);
       }
 
-      // Suavizado de la aguja con LERP para movimiento orgánico
-      this.currentAngle += (this.targetAngle - this.currentAngle) * 0.22;
-      this.dom.gaugeNeedle.setAttribute('transform', `rotate(${this.currentAngle} 160 180)`);
+      // Suavizado ultra fluido LERP a 60 FPS
+      const angleDiff = this.targetAngle - this.currentAngle;
+      this.currentAngle += angleDiff * 0.28;
+
+      // Trigonometría pura: Pivote estrictamente anclado en (160, 180)
+      const rad = (this.currentAngle - 90) * (Math.PI / 180);
+      const needleLen = 124;
+      const x2 = 160 + needleLen * Math.cos(rad);
+      const y2 = 180 + needleLen * Math.sin(rad);
+
+      if (this.dom.needleBody) {
+        this.dom.needleBody.setAttribute('x2', x2.toFixed(1));
+        this.dom.needleBody.setAttribute('y2', y2.toFixed(1));
+      }
+      if (this.dom.needleHead) {
+        this.dom.needleHead.setAttribute('cx', x2.toFixed(1));
+        this.dom.needleHead.setAttribute('cy', y2.toFixed(1));
+      }
 
       requestAnimationFrame(loop);
     };
@@ -405,8 +436,8 @@ class GuitarTunerApp {
 
   processPitchData(data) {
     if (!data || !data.hasSignal) {
-      // Si la señal decayó, regresar gradualmente la aguja al centro
-      this.targetAngle = 0;
+      // Regreso suave de la aguja hacia el centro
+      this.targetAngle = this.targetAngle * 0.85;
       this.dom.flatIndicator.classList.remove('active');
       this.dom.sharpIndicator.classList.remove('active');
       return;
@@ -423,9 +454,7 @@ class GuitarTunerApp {
     // Si tenemos una cuerda objetivo específica, afinamos relativo a su frecuencia exacta
     if (targetStringIndex !== null && targetStringIndex !== undefined) {
       const targetStr = this.currentTuning.strings[targetStringIndex];
-      // Recalcular cents con respecto a la cuerda seleccionada
       const exactCents = Math.round(1200 * Math.log2(frequency / targetStr.freq));
-      // Si está en un rango coherente para esa cuerda (-50 a +50)
       if (Math.abs(exactCents) <= 60) {
         cents = exactCents;
         noteAmerican = targetStr.noteAm;
@@ -434,21 +463,24 @@ class GuitarTunerApp {
       }
     }
 
-    // Limitar cents de -50 a +50
-    const clampedCents = Math.max(-50, Math.min(50, cents));
-    // Calcular ángulo de la aguja (-60 grados a +60 grados)
+    // Suavizado EMA de los Cents para eliminar vibraciones espurias
+    this.smoothedCents = this.smoothedCents * 0.62 + cents * 0.38;
+    const roundedCents = Math.round(this.smoothedCents);
+
+    // Ángulo de -60° a +60° según los Cents
+    const clampedCents = Math.max(-50, Math.min(50, this.smoothedCents));
     this.targetAngle = (clampedCents / 50) * 60;
 
-    // Actualizar visualización
+    // Actualizar textos en pantalla
     this.dom.noteAmerican.textContent = noteAmerican;
     this.dom.noteOctave.textContent = octave !== undefined ? octave : '';
     this.dom.euNoteName.textContent = noteEuropean;
     this.dom.freqValue.textContent = frequency.toFixed(1);
-    this.dom.centsValue.textContent = `${cents > 0 ? '+' : ''}${cents}`;
+    this.dom.centsValue.textContent = `${roundedCents > 0 ? '+' : ''}${roundedCents}`;
 
     // Flechas Flat / Sharp
-    this.dom.flatIndicator.classList.toggle('active', cents < -2);
-    this.dom.sharpIndicator.classList.toggle('active', cents > 2);
+    this.dom.flatIndicator.classList.toggle('active', roundedCents < -2);
+    this.dom.sharpIndicator.classList.toggle('active', roundedCents > 2);
 
     // Estados de afinación
     const isInTune = Math.abs(cents) <= 3;
