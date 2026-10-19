@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Gradiente de fondo del icono -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1d33" />
+      <stop offset="100%" stop-color="#040b14" />
+    </linearGradient>
+
+    <!-- Gradiente oficial Magenta Backstage -->
+    <linearGradient id="magentaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2a8d" />
+      <stop offset="50%" stop-color="#ea1b75" />
+      <stop offset="100%" stop-color="#b80c55" />
+    </linearGradient>
+
+    <!-- Gradiente del arco de afinación -->
+    <linearGradient id="tunerArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffcb05" />
+      <stop offset="42%" stop-color="#0088cb" />
+      <stop offset="50%" stop-color="#10e5a5" />
+      <stop offset="58%" stop-color="#0088cb" />
+      <stop offset="100%" stop-color="#ea1b75" />
+    </linearGradient>
+
+    <!-- Resplandor neón -->
+    <filter id="glowMint" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="glowMagenta" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="shadowBadge" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+  </defs>
+
+  <!-- Fondo squircle estilo iOS/Android -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)" />
+  <rect width="508" height="508" x="2" y="2" rx="113" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="2" />
+
+  <!-- Círculos concéntricos de afinador / diapasón acústico en segundo plano -->
+  <circle cx="256" cy="256" r="215" fill="none" stroke="rgba(0, 136, 203, 0.12)" stroke-width="1.5" stroke-dasharray="4 8" />
+  <circle cx="256" cy="256" r="185" fill="none" stroke="rgba(234, 27, 117, 0.15)" stroke-width="1.5" />
+
+  <!-- Arco medidor de afinación superior (Gauge Arc) -->
+  <path d="M 120 256 A 150 150 0 0 1 392 256" fill="none" stroke="url(#tunerArcGrad)" stroke-width="6" stroke-linecap="round" opacity="0.85" />
+
+  <!-- Ticks del medidor de afinación -->
+  <!-- Bemoles (Izquierda) -->
+  <line x1="148" y1="205" x2="160" y2="215" stroke="#ffcb05" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+  <line x1="185" y1="165" x2="194" y2="178" stroke="#ffcb05" stroke-width="3.5" stroke-linecap="round" opacity="0.85" />
+  <line x1="222" y1="140" x2="226" y2="155" stroke="#0088cb" stroke-width="3.5" stroke-linecap="round" opacity="0.9" />
+
+  <!-- Centro: In Tune (Perfecto) -->
+  <line x1="256" y1="92" x2="256" y2="122" stroke="#10e5a5" stroke-width="5" stroke-linecap="round" filter="url(#glowMint)" />
+  <circle cx="256" cy="84" r="5" fill="#10e5a5" filter="url(#glowMint)" />
+
+  <!-- Sostenidos (Derecha) -->
+  <line x1="290" y1="140" x2="286" y2="155" stroke="#0088cb" stroke-width="3.5" stroke-linecap="round" opacity="0.9" />
+  <line x1="327" y1="165" x2="318" y2="178" stroke="#ea1b75" stroke-width="3.5" stroke-linecap="round" opacity="0.85" />
+  <line x1="364" y1="205" x2="352" y2="215" stroke="#ea1b75" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+
+  <!-- Insignia Circular Magenta Oficial de Backstage -->
+  <g filter="url(#shadowBadge)">
+    <!-- Círculo principal -->
+    <circle cx="256" cy="275" r="128" fill="url(#magentaGrad)" />
+    
+    <!-- Anillo sutil de luz -->
+    <circle cx="256" cy="275" r="127" fill="none" stroke="rgba(255, 255, 255, 0.25)" stroke-width="2" />
+
+    <!-- Trazo continuo caligráfico de la 'B' de Backstage estilizado como Clavijero/Guitarra -->
+    <path d="M 215 365 
+             C 185 340, 168 295, 185 245
+             C 198 208, 226 195, 254 200
+             C 285 205, 305 228, 302 254
+             C 298 275, 278 288, 258 288
+             C 288 290, 318 305, 318 335
+             C 318 370, 275 385, 235 372
+             C 205 362, 202 335, 218 308
+             C 232 284, 256 260, 260 232" 
+          fill="none" 
+          stroke="#ffffff" 
+          stroke-width="16" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <!-- Aguja de afinador de precisión que nace del corazón de la B hacia el centro perfecto -->
+    <line x1="256" y1="275" x2="256" y2="128" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" />
+    <polygon points="256,116 250,132 262,132" fill="#10e5a5" filter="url(#glowMint)" />
+    <circle cx="256" cy="275" r="8" fill="#ffffff" />
+    <circle cx="256" cy="275" r="4" fill="#ea1b75" />
+  </g>
+
+  <!-- Púa de guitarra / 6 cuerdas estilizadas en la base -->
+  <g opacity="0.5" stroke="rgba(255, 255, 255, 0.4)" stroke-linecap="round">
+    <line x1="216" y1="440" x2="216" y2="455" stroke-width="3" />
+    <line x1="232" y1="438" x2="232" y2="457" stroke-width="2.5" />
+    <line x1="248" y1="436" x2="248" y2="459" stroke-width="2" />
+    <line x1="264" y1="436" x2="264" y2="459" stroke-width="1.6" />
+    <line x1="280" y1="438" x2="280" y2="457" stroke-width="1.3" />
+    <line x1="296" y1="440" x2="296" y2="455" stroke-width="1" />
+  </g>
+</svg>

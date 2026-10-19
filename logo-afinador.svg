@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180" width="100%" height="100%">
+  <defs>
+    <!-- Gradiente Magenta Backstage -->
+    <linearGradient id="logoMagentaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2a8d" />
+      <stop offset="50%" stop-color="#ea1b75" />
+      <stop offset="100%" stop-color="#b80c55" />
+    </linearGradient>
+
+    <!-- Gradiente del arco -->
+    <linearGradient id="logoArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffcb05" />
+      <stop offset="45%" stop-color="#0088cb" />
+      <stop offset="50%" stop-color="#10e5a5" />
+      <stop offset="55%" stop-color="#0088cb" />
+      <stop offset="100%" stop-color="#ea1b75" />
+    </linearGradient>
+
+    <!-- Resplandor In-Tune -->
+    <filter id="logoGlowMint" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="logoDropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- ISOTIPO AFINADOR BACKSTAGE (Izquierda, centro X=90, Y=90) -->
+  <g transform="translate(10, 0)">
+    <!-- Arco de afinación superior -->
+    <path d="M 35 90 A 55 55 0 0 1 145 90" fill="none" stroke="url(#logoArcGrad)" stroke-width="4" stroke-linecap="round" opacity="0.9" />
+
+    <!-- Ticks de afinación -->
+    <line x1="45" y1="70" x2="52" y2="76" stroke="#ffcb05" stroke-width="2" stroke-linecap="round" />
+    <line x1="68" y1="50" x2="73" y2="58" stroke="#0088cb" stroke-width="2" stroke-linecap="round" />
+    
+    <!-- Centro In-Tune perfecto -->
+    <line x1="90" y1="30" x2="90" y2="42" stroke="#10e5a5" stroke-width="3.5" stroke-linecap="round" filter="url(#logoGlowMint)" />
+    <circle cx="90" cy="24" r="3" fill="#10e5a5" filter="url(#logoGlowMint)" />
+    
+    <line x1="112" y1="50" x2="107" y2="58" stroke="#0088cb" stroke-width="2" stroke-linecap="round" />
+    <line x1="135" y1="70" x2="128" y2="76" stroke="#ea1b75" stroke-width="2" stroke-linecap="round" />
+
+    <!-- Círculo principal magenta con sombra -->
+    <g filter="url(#logoDropShadow)">
+      <circle cx="90" cy="98" r="48" fill="url(#logoMagentaGrad)" />
+      <circle cx="90" cy="98" r="47.5" fill="none" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1" />
+
+      <!-- B caligráfica / silueta -->
+      <path d="M 75 132 
+               C 62 122, 55 106, 62 86
+               C 67 71, 78 66, 89 68
+               C 101 70, 109 79, 107 89
+               C 106 97, 98 102, 90 102
+               C 102 103, 114 109, 114 121
+               C 114 135, 97 141, 82 136
+               C 70 132, 69 121, 76 110
+               C 81 101, 91 91, 92 80" 
+            fill="none" 
+            stroke="#ffffff" 
+            stroke-width="6.5" 
+            stroke-linecap="round" 
+            stroke-linejoin="round" />
+
+      <!-- Aguja de afinación apuntando a 0 cents -->
+      <line x1="90" y1="98" x2="90" y2="44" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+      <circle cx="90" cy="98" r="4" fill="#ffffff" />
+      <circle cx="90" cy="98" r="2" fill="#ea1b75" />
+    </g>
+  </g>
+
+  <!-- TIPOGRAFÍA Y MARCA (Derecha) -->
+  <g transform="translate(190, 0)">
+    <!-- Backstage -->
+    <text x="0" y="85" 
+          font-family="'Montserrat', 'Poppins', -apple-system, sans-serif" 
+          font-size="52" 
+          font-weight="900" 
+          letter-spacing="-1.5" 
+          fill="#ffffff">
+      Backstage
+    </text>
+
+    <!-- Badge AFINADOR -->
+    <g transform="translate(290, 48)">
+      <rect width="112" height="26" rx="8" fill="url(#logoMagentaGrad)" />
+      <text x="56" y="17.5" 
+            font-family="'Montserrat', sans-serif" 
+            font-size="12" 
+            font-weight="800" 
+            letter-spacing="2" 
+            fill="#ffffff" 
+            text-anchor="middle">
+        TUNER
+      </text>
+    </g>
+
+    <!-- Subtítulo: Afinador de Guitarra -->
+    <text x="2" y="118" 
+          font-family="'Montserrat', sans-serif" 
+          font-size="16" 
+          font-weight="800" 
+          letter-spacing="5" 
+          fill="#ffcb05">
+      AFINADOR DE GUITARRA
+    </text>
+
+    <!-- Línea divisoria elegante -->
+    <line x1="2" y1="130" x2="410" y2="130" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" />
+
+    <!-- Tagline oficial adaptado -->
+    <g transform="translate(2, 150)">
+      <text x="0" y="0" 
+            font-family="'Poppins', sans-serif" 
+            font-size="11" 
+            font-weight="600" 
+            letter-spacing="1.8" 
+            fill="#9ebad4">
+        ESCUELA DE MÚSICA Y DANZA
+      </text>
+      <circle cx="215" cy="-3.5" r="2.5" fill="#10e5a5" />
+      <text x="228" y="0" 
+            font-family="'Montserrat', sans-serif" 
+            font-size="10.5" 
+            font-weight="700" 
+            letter-spacing="2.5" 
+            fill="#10e5a5">
+        PRECISIÓN 440 HZ
+      </text>
+    </g>
+  </g>
+</svg>

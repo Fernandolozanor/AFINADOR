@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" type="image/png" href="backstage-icon.png">
-  <link rel="apple-touch-icon" href="backstage-icon.png">
+  <link rel="icon" type="image/svg+xml" href="icon-afinador.svg">
+  <link rel="apple-touch-icon" href="afinador-backstage-logo.jpg">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -159,7 +159,7 @@
     <div class="welcome-overlay" id="welcomeOverlay">
       <div class="welcome-card">
         <div class="welcome-logo-container">
-          <img src="backstage-logo.png" alt="Escuela Backstage" class="welcome-backstage-logo">
+          <img src="afinador-backstage-logo.jpg" alt="Afinador Backstage" class="welcome-backstage-logo">
         </div>
         <h2>Afinador de Guitarra</h2>
         <p class="school-subtitle">ESCUELA DE MÚSICA Y DANZA · RIVAS</p>
@@ -175,12 +175,12 @@
     </div>
   </div>
 
-  <script src="audio-processor.js?v=8.0"></script>
-  <script src="app.js?v=8.0"></script>
+  <script src="audio-processor.js?v=9.0"></script>
+  <script src="app.js?v=9.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=8.0').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=9.0').then(reg => {
           reg.update();
         }).catch(() => {});
       });
