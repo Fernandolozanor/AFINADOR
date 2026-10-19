@@ -1,27 +1,31 @@
-const CACHE_NAME = 'afinador-pro-v2';
+const CACHE_NAME = 'afinador-pro-v3';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './app.js',
-  './audio-processor.js',
+  './app.js?v=3.0',
+  './audio-processor.js?v=3.0',
   './manifest.json',
   './icon-192.svg',
   './icon-512.svg'
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
   self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {})
+  );
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
       );
     })
   );
@@ -30,8 +34,6 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((res) => {
-      return res || fetch(e.request);
-    }).catch(() => caches.match('./index.html'))
+    fetch(e.request).catch(() => caches.match(e.request))
   );
 });

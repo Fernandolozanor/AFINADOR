@@ -1,6 +1,6 @@
 /**
  * AudioProcessor - Motor de procesamiento de audio y detección de tono (Pitch Detection)
- * Utiliza Web Audio API con filtros Biquad, algoritmo YIN optimizado e indicador de nivel.
+ * Conexión forzada con GainNode(0) -> destination para garantizar flujo de datos en móviles (iOS/Android)
  */
 
 class AudioProcessor {
@@ -9,18 +9,20 @@ class AudioProcessor {
     this.mediaStream = null;
     this.sourceNode = null;
     this.analyserNode = null;
+    this.silenceGain = null;
     
-    // Nodos de filtrado para aislar el sonido de la guitarra del ruido ambiental
+    // Nodos de filtrado
     this.highpassFilter = null;
     this.lowpassFilter = null;
-    this.isFilterEnabled = true;
+    this.isFilterEnabled = false; // Directo por defecto para máxima fidelidad en móviles
 
-    // Buffer aumentado a 4096 para capturar perfectamente los graves a 48 kHz (cuerdas 6ª y 5ª)
-    this.bufferSize = 4096;
+    // Buffer para análisis de frecuencia
+    this.bufferSize = 2048;
     this.buffer = new Float32Array(this.bufferSize);
+    this.byteBuffer = new Uint8Array(this.bufferSize);
 
-    // Umbral de Noise Gate (RMS) sensible para captar cuerdas suaves a distancia
-    this.noiseThreshold = 0.003; 
+    // Umbral de Noise Gate (RMS) ultra sensible
+    this.noiseThreshold = 0.002; 
 
     this.isRunning = false;
 
@@ -31,28 +33,24 @@ class AudioProcessor {
   }
 
   /**
-   * Inicia el contexto de audio y solicita acceso al micrófono con fallbacks robustos
+   * Inicia el contexto de audio y solicita acceso al micrófono
    */
   async start() {
-    if (this.isRunning) {
-      if (this.audioCtx && this.audioCtx.state === 'suspended') {
-        await this.audioCtx.resume();
-      }
-      return true;
-    }
-
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      this.audioCtx = new AudioContextClass({
-        latencyHint: 'interactive'
-      });
+      if (!this.audioCtx || this.audioCtx.state === 'closed') {
+        this.audioCtx = new AudioContextClass();
+      }
 
       if (this.audioCtx.state === 'suspended') {
         await this.audioCtx.resume();
       }
 
-      // Solicitud de micrófono con fallback: si el navegador móvil no soporta constraints avanzados,
-      // cae de forma segura a { audio: true }
+      // Solicitud de micrófono compatible con todos los teléfonos
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Tu navegador no soporta captura de micrófono.");
+      }
+
       try {
         this.mediaStream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -61,74 +59,82 @@ class AudioProcessor {
             autoGainControl: false
           }
         });
-      } catch (constraintErr) {
-        console.warn("Navegador no soporta constraints estrictos, usando fallback estándar:", constraintErr);
+      } catch (e) {
+        // Fallback básico para cualquier móvil
         this.mediaStream = await navigator.mediaDevices.getUserMedia({
           audio: true
         });
       }
 
+      // Crear nodos
       this.sourceNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
       this.analyserNode = this.audioCtx.createAnalyser();
       this.analyserNode.fftSize = this.bufferSize;
-      this.analyserNode.smoothingTimeConstant = 0.1;
+      this.analyserNode.smoothingTimeConstant = 0.2;
 
-      // Filtro Paso Alto (High-pass): Elimina ruidos subsónicos (< 60 Hz)
+      // NODO CLAVE: GainNode con valor 0 conectado a destination.
+      // Sin esto, Safari y Chrome móvil NO procesan el grafo de audio y devuelven 0s.
+      this.silenceGain = this.audioCtx.createGain();
+      this.silenceGain.gain.value = 0;
+
+      // Filtros opcionales
       this.highpassFilter = this.audioCtx.createBiquadFilter();
       this.highpassFilter.type = 'highpass';
-      this.highpassFilter.frequency.value = 60;
-      this.highpassFilter.Q.value = 0.7;
+      this.highpassFilter.frequency.value = 65;
 
-      // Filtro Paso Bajo (Low-pass): Elimina siseos y conversaciones (> 1200 Hz)
       this.lowpassFilter = this.audioCtx.createBiquadFilter();
       this.lowpassFilter.type = 'lowpass';
-      this.lowpassFilter.frequency.value = 1200;
-      this.lowpassFilter.Q.value = 0.7;
+      this.lowpassFilter.frequency.value = 1100;
 
       this.setupRouting();
+
+      // Asegurar que el contexto está activo
+      if (this.audioCtx.state === 'suspended') {
+        await this.audioCtx.resume();
+      }
+
       this.isRunning = true;
       return true;
     } catch (err) {
-      console.error("Error al iniciar el procesador de audio:", err);
+      console.error("Error al iniciar audio:", err);
       this.isRunning = false;
       throw err;
     }
   }
 
   /**
-   * Conecta los nodos de audio según esté activo o no el filtro anti-ruido
+   * Conecta los nodos de audio asegurando ruta hasta destination (silenciado)
    */
   setupRouting() {
-    if (!this.sourceNode || !this.analyserNode) return;
+    if (!this.sourceNode || !this.analyserNode || !this.silenceGain || !this.audioCtx) return;
 
     try {
       this.sourceNode.disconnect();
+      this.analyserNode.disconnect();
       if (this.highpassFilter) this.highpassFilter.disconnect();
       if (this.lowpassFilter) this.lowpassFilter.disconnect();
+      this.silenceGain.disconnect();
     } catch (e) {}
 
     if (this.isFilterEnabled && this.highpassFilter && this.lowpassFilter) {
-      // Micro -> Highpass -> Lowpass -> Analyser
+      // Source -> Highpass -> Lowpass -> Analyser -> Silence -> Destination
       this.sourceNode.connect(this.highpassFilter);
       this.highpassFilter.connect(this.lowpassFilter);
       this.lowpassFilter.connect(this.analyserNode);
     } else {
-      // Micro directo a Analyser
+      // Directo: Source -> Analyser -> Silence -> Destination
       this.sourceNode.connect(this.analyserNode);
     }
+
+    this.analyserNode.connect(this.silenceGain);
+    this.silenceGain.connect(this.audioCtx.destination);
   }
 
-  /**
-   * Activa o desactiva el aislamiento de ruido
-   */
   setFilterEnabled(enabled) {
     this.isFilterEnabled = enabled;
     this.setupRouting();
   }
 
-  /**
-   * Detiene el micrófono y libera recursos
-   */
   stop() {
     if (!this.isRunning) return;
 
@@ -145,20 +151,12 @@ class AudioProcessor {
     this.isRunning = false;
   }
 
-  /**
-   * Reanuda el contexto si el navegador lo suspendió
-   */
-  async resumeContextIfNeeded() {
+  resumeContext() {
     if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      try {
-        await this.audioCtx.resume();
-      } catch (e) {}
+      this.audioCtx.resume().catch(() => {});
     }
   }
 
-  /**
-   * Calcula la energía RMS (Root Mean Square)
-   */
   getRMS(buffer) {
     let sum = 0;
     for (let i = 0; i < buffer.length; i++) {
@@ -168,24 +166,29 @@ class AudioProcessor {
   }
 
   /**
-   * Obtiene la muestra actual, nivel de volumen y detecta la nota
+   * Lee los datos de audio con soporte dual (Float32Array y Byte fallback)
    */
   detectPitch() {
     if (!this.isRunning || !this.analyserNode) {
       return null;
     }
 
-    this.resumeContextIfNeeded();
+    this.resumeContext();
 
-    this.analyserNode.getFloatTimeDomainData(this.buffer);
+    // Obtener datos del micro con compatibilidad total
+    if (typeof this.analyserNode.getFloatTimeDomainData === 'function') {
+      this.analyserNode.getFloatTimeDomainData(this.buffer);
+    } else {
+      this.analyserNode.getByteTimeDomainData(this.byteBuffer);
+      for (let i = 0; i < this.bufferSize; i++) {
+        this.buffer[i] = (this.byteBuffer[i] - 128) / 128;
+      }
+    }
 
-    // Calcular volumen RMS
     const rms = this.getRMS(this.buffer);
-    
-    // Nivel normalizado para el vúmetro visual (0 a 100%)
-    const volumePercent = Math.min(100, Math.round((rms / 0.08) * 100));
+    const volumePercent = Math.min(100, Math.round((rms / 0.05) * 100));
 
-    // Si está por debajo de la puerta de ruido, reportar el nivel pero no calcular nota errática
+    // Si el volumen es muy bajo, reportamos el nivel pero no calculamos tono errático
     if (rms < this.noiseThreshold) {
       return {
         hasSignal: false,
@@ -195,17 +198,16 @@ class AudioProcessor {
       };
     }
 
-    const sampleRate = this.audioCtx ? this.audioCtx.sampleRate : 44100;
+    const sampleRate = (this.audioCtx && this.audioCtx.sampleRate) ? this.audioCtx.sampleRate : 44100;
 
-    // Detección de Frecuencia con YIN mejorado
+    // Algoritmo YIN con interpolación parabólica
     let frequency = this.yinPitchDetection(this.buffer, sampleRate);
 
-    // Si YIN no detectó, intentar con autocorrelación de respaldo
+    // Fallback a autocorrelación
     if (!frequency || frequency < 60 || frequency > 1200) {
       frequency = this.autoCorrelationPitch(this.buffer, sampleRate);
     }
 
-    // Si sigue fuera del rango de guitarra, retornar solo señal
     if (!frequency || frequency < 60 || frequency > 1200) {
       return {
         hasSignal: false,
@@ -215,7 +217,6 @@ class AudioProcessor {
       };
     }
 
-    // Convertir frecuencia a nota musical y desviación en cents
     const noteInfo = this.frequencyToNote(frequency);
 
     return {
@@ -228,14 +229,10 @@ class AudioProcessor {
     };
   }
 
-  /**
-   * Algoritmo YIN para detección precisa de tono monofónico
-   */
   yinPitchDetection(buffer, sampleRate) {
     const halfBufferSize = Math.floor(buffer.length / 2);
     const yinBuffer = new Float32Array(halfBufferSize);
 
-    // 1. Diferencia cuadrática acumulada
     for (let tau = 0; tau < halfBufferSize; tau++) {
       let sum = 0;
       for (let i = 0; i < halfBufferSize; i++) {
@@ -245,7 +242,6 @@ class AudioProcessor {
       yinBuffer[tau] = sum;
     }
 
-    // 2. Normalización CMNDF
     yinBuffer[0] = 1;
     let runningSum = 0;
     for (let tau = 1; tau < halfBufferSize; tau++) {
@@ -253,7 +249,6 @@ class AudioProcessor {
       yinBuffer[tau] = (yinBuffer[tau] * tau) / (runningSum || 1);
     }
 
-    // 3. Primer mínimo local significativo (umbral tolerante para micrófonos móviles)
     const threshold = 0.20;
     let tauEstimate = -1;
 
@@ -267,7 +262,6 @@ class AudioProcessor {
       }
     }
 
-    // Búsqueda de mínimo global si no superó el umbral estricto
     if (tauEstimate === -1) {
       let minVal = 1000;
       let minTau = -1;
@@ -284,7 +278,6 @@ class AudioProcessor {
       }
     }
 
-    // 4. Interpolación parabólica
     let betterTau;
     const x0 = tauEstimate < 1 ? tauEstimate : tauEstimate - 1;
     const x2 = tauEstimate + 1 < halfBufferSize ? tauEstimate + 1 : tauEstimate;
@@ -297,23 +290,16 @@ class AudioProcessor {
       const s0 = yinBuffer[x0];
       const s1 = yinBuffer[tauEstimate];
       const s2 = yinBuffer[x2];
-      const denominator = 2 * (2 * s1 - s2 - s0);
-      if (denominator !== 0) {
-        betterTau = tauEstimate + (s2 - s0) / denominator;
-      } else {
-        betterTau = tauEstimate;
-      }
+      const denom = 2 * (2 * s1 - s2 - s0);
+      betterTau = denom !== 0 ? tauEstimate + (s2 - s0) / denom : tauEstimate;
     }
 
     return sampleRate / betterTau;
   }
 
-  /**
-   * Autocorrelación normalizada de respaldo
-   */
   autoCorrelationPitch(buffer, sampleRate) {
-    const minSamples = Math.floor(sampleRate / 1200); // ~1200 Hz
-    const maxSamples = Math.floor(sampleRate / 60);   // ~60 Hz
+    const minSamples = Math.floor(sampleRate / 1200);
+    const maxSamples = Math.floor(sampleRate / 60);
     
     let bestOffset = -1;
     let maxCorrelation = 0;
@@ -329,15 +315,12 @@ class AudioProcessor {
       }
     }
 
-    if (maxCorrelation > 0.01 && bestOffset !== -1) {
+    if (maxCorrelation > 0.005 && bestOffset !== -1) {
       return sampleRate / bestOffset;
     }
     return null;
   }
 
-  /**
-   * Convierte frecuencia (Hz) a nota musical, octava y desviación en cents
-   */
   frequencyToNote(frequency) {
     const midiNumber = 69 + 12 * Math.log2(frequency / this.a4Frequency);
     const roundedMidi = Math.round(midiNumber);
