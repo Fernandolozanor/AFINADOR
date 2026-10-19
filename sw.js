@@ -1,10 +1,10 @@
-const CACHE_NAME = 'afinador-pro-v4';
+const CACHE_NAME = 'afinador-pro-v5';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './app.js?v=4.0',
-  './audio-processor.js?v=4.0',
+  './app.js?v=5.0',
+  './audio-processor.js?v=5.0',
   './manifest.json',
   './icon-192.svg',
   './icon-512.svg'

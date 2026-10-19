@@ -1,6 +1,6 @@
 /**
- * AudioProcessor - Motor de procesamiento de audio y detección de tono ultra rápido
- * Optimizado para instrumentos de cuerda (guitarra) con YIN acelerado por rango.
+ * AudioProcessor - Motor de audio de alta sensibilidad con preamplificador digital (+14 dB)
+ * y detección de tono YIN acelerada para guitarra.
  */
 
 class AudioProcessor {
@@ -8,6 +8,7 @@ class AudioProcessor {
     this.audioCtx = null;
     this.mediaStream = null;
     this.sourceNode = null;
+    this.preampGain = null; // Preamplificador digital
     this.analyserNode = null;
     this.silenceGain = null;
     
@@ -16,17 +17,19 @@ class AudioProcessor {
     this.lowpassFilter = null;
     this.isFilterEnabled = false;
 
+    // Multiplicador de ganancia digital (Boost x5.0 = +14 dB)
+    this.boostLevel = 5.0;
+
     // Buffer de 2048 muestras
     this.bufferSize = 2048;
     this.buffer = new Float32Array(this.bufferSize);
     this.byteBuffer = new Uint8Array(this.bufferSize);
 
-    // Umbral de Noise Gate
-    this.noiseThreshold = 0.003;
+    // Umbral de Noise Gate (tras el boost x5, 0.006 equivale a 0.0012 bruto)
+    this.noiseThreshold = 0.005;
 
     // Suavizado de frecuencia
     this.lastDetectedFreq = null;
-    this.lastPitchTime = 0;
 
     this.isRunning = false;
 
@@ -52,7 +55,7 @@ class AudioProcessor {
           audio: {
             echoCancellation: false,
             noiseSuppression: false,
-            autoGainControl: false
+            autoGainControl: true // Permitir ganancia del dispositivo si está disponible
           }
         });
       } catch (e) {
@@ -60,14 +63,20 @@ class AudioProcessor {
       }
 
       this.sourceNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
+
+      // Preamplificador digital potente: Eleva la señal débil de micrófonos móviles
+      this.preampGain = this.audioCtx.createGain();
+      this.preampGain.gain.value = this.boostLevel;
+
       this.analyserNode = this.audioCtx.createAnalyser();
       this.analyserNode.fftSize = this.bufferSize;
       this.analyserNode.smoothingTimeConstant = 0.1;
 
-      // Nodo de silencio para obligar al navegador a bombear datos del micro sin producir eco
+      // Nodo de silencio para forzar flujo de datos sin acople
       this.silenceGain = this.audioCtx.createGain();
       this.silenceGain.gain.value = 0;
 
+      // Filtros
       this.highpassFilter = this.audioCtx.createBiquadFilter();
       this.highpassFilter.type = 'highpass';
       this.highpassFilter.frequency.value = 65;
@@ -92,24 +101,31 @@ class AudioProcessor {
   }
 
   setupRouting() {
-    if (!this.sourceNode || !this.analyserNode || !this.silenceGain || !this.audioCtx) return;
+    if (!this.sourceNode || !this.preampGain || !this.analyserNode || !this.silenceGain || !this.audioCtx) return;
 
     try {
       this.sourceNode.disconnect();
+      this.preampGain.disconnect();
       this.analyserNode.disconnect();
       if (this.highpassFilter) this.highpassFilter.disconnect();
       if (this.lowpassFilter) this.lowpassFilter.disconnect();
       this.silenceGain.disconnect();
     } catch (e) {}
 
+    // Micro -> Preamplificador digital (x5)
+    this.sourceNode.connect(this.preampGain);
+
     if (this.isFilterEnabled && this.highpassFilter && this.lowpassFilter) {
-      this.sourceNode.connect(this.highpassFilter);
+      // Preamp -> Highpass -> Lowpass -> Analyser
+      this.preampGain.connect(this.highpassFilter);
       this.highpassFilter.connect(this.lowpassFilter);
       this.lowpassFilter.connect(this.analyserNode);
     } else {
-      this.sourceNode.connect(this.analyserNode);
+      // Preamp directo a Analyser
+      this.preampGain.connect(this.analyserNode);
     }
 
+    // Analyser -> SilenceGain (0) -> Destination
     this.analyserNode.connect(this.silenceGain);
     this.silenceGain.connect(this.audioCtx.destination);
   }
@@ -117,6 +133,13 @@ class AudioProcessor {
   setFilterEnabled(enabled) {
     this.isFilterEnabled = enabled;
     this.setupRouting();
+  }
+
+  setBoostLevel(level) {
+    this.boostLevel = level;
+    if (this.preampGain && this.audioCtx) {
+      this.preampGain.gain.setTargetAtTime(level, this.audioCtx.currentTime, 0.05);
+    }
   }
 
   stop() {
@@ -151,9 +174,6 @@ class AudioProcessor {
     return Math.sqrt((sum * 2) / len);
   }
 
-  /**
-   * Detección de tono de alto rendimiento en tiempo real
-   */
   detectPitch() {
     if (!this.isRunning || !this.analyserNode) {
       return null;
@@ -171,7 +191,8 @@ class AudioProcessor {
     }
 
     const rms = this.getRMS(this.buffer);
-    const volumePercent = Math.min(100, Math.round((rms / 0.05) * 100));
+    // Nivel del vúmetro generoso y sensible (0% a 100%)
+    const volumePercent = Math.min(100, Math.round((rms / 0.12) * 100));
 
     if (rms < this.noiseThreshold) {
       this.lastDetectedFreq = null;
@@ -185,7 +206,7 @@ class AudioProcessor {
 
     const sampleRate = (this.audioCtx && this.audioCtx.sampleRate) ? this.audioCtx.sampleRate : 44100;
 
-    // YIN acelerado por rango para guitarras (65 Hz a 900 Hz)
+    // YIN rápido optimizado para guitarra (65 Hz a 900 Hz)
     let rawFrequency = this.fastYinGuitar(this.buffer, sampleRate);
 
     if (!rawFrequency || rawFrequency < 60 || rawFrequency > 950) {
@@ -197,12 +218,11 @@ class AudioProcessor {
       };
     }
 
-    // Suavizado adaptativo de frecuencia para evitar temblores
     let frequency = rawFrequency;
     if (this.lastDetectedFreq) {
       const semitoneRatio = Math.abs(Math.log2(rawFrequency / this.lastDetectedFreq));
-      if (semitoneRatio < 0.15) { // Si es la misma nota o ligera variación
-        frequency = this.lastDetectedFreq * 0.65 + rawFrequency * 0.35;
+      if (semitoneRatio < 0.15) {
+        frequency = this.lastDetectedFreq * 0.60 + rawFrequency * 0.40;
       }
     }
     this.lastDetectedFreq = frequency;
@@ -219,18 +239,13 @@ class AudioProcessor {
     };
   }
 
-  /**
-   * Algoritmo YIN optimizado: 20x más rápido al acotar el rango de tau a notas de guitarra
-   */
   fastYinGuitar(buffer, sampleRate) {
-    // Frecuencias: 65 Hz (Drop C/D) a 850 Hz (agudos de guitarra)
     const minTau = Math.max(2, Math.floor(sampleRate / 850));
     const maxTau = Math.min(Math.floor(buffer.length / 2), Math.floor(sampleRate / 65));
-    const windowSize = 900; // Ventana suficiente para precisión de fase sin sobrecargar CPU
+    const windowSize = 900;
 
     const yin = new Float32Array(maxTau + 1);
 
-    // 1. Diferencia cuadrática acumulada
     for (let tau = minTau; tau <= maxTau; tau++) {
       let sum = 0;
       for (let i = 0; i < windowSize; i += 2) {
@@ -240,15 +255,13 @@ class AudioProcessor {
       yin[tau] = sum * 2;
     }
 
-    // 2. Normalización CMNDF en el rango evaluado
     let runningSum = 0;
     for (let tau = minTau; tau <= maxTau; tau++) {
       runningSum += yin[tau];
       yin[tau] = (yin[tau] * tau) / (runningSum || 1);
     }
 
-    // 3. Selección del dip significativo (umbral tolerante de guitarra)
-    const threshold = 0.20;
+    const threshold = 0.22;
     let tauEstimate = -1;
 
     for (let tau = minTau; tau < maxTau; tau++) {
@@ -261,7 +274,6 @@ class AudioProcessor {
       }
     }
 
-    // Fallback al mínimo global si no superó el umbral
     if (tauEstimate === -1) {
       let minVal = 1000;
       let minTau = -1;
@@ -271,14 +283,13 @@ class AudioProcessor {
           minTau = tau;
         }
       }
-      if (minVal < 0.55 && minTau !== -1) {
+      if (minVal < 0.58 && minTau !== -1) {
         tauEstimate = minTau;
       } else {
         return null;
       }
     }
 
-    // 4. Interpolación parabólica sub-muestra
     const x0 = tauEstimate < minTau ? minTau : tauEstimate - 1;
     const x2 = tauEstimate + 1 > maxTau ? maxTau : tauEstimate + 1;
     const s0 = yin[x0];

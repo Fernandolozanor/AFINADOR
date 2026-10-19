@@ -48,7 +48,8 @@ html, body {
   height: 100dvh;
   position: relative;
   overflow: hidden;
-  padding: env(safe-area-inset-top, 12px) 16px env(safe-area-inset-bottom, 14px) 16px;
+  padding: max(10px, env(safe-area-inset-top, 10px)) clamp(12px, 3.5vw, 20px) max(12px, env(safe-area-inset-bottom, 12px)) clamp(12px, 3.5vw, 20px);
+  gap: clamp(6px, 1.4vh, 16px);
   background: radial-gradient(circle at 50% 10%, #172138 0%, #0b0f19 80%);
 }
 
@@ -73,7 +74,8 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 4px 6px 4px;
+  padding: 4px 2px;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -130,8 +132,8 @@ html, body {
 }
 
 .vu-meter {
-  width: 44px;
-  height: 6px;
+  width: 50px;
+  height: 7px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   overflow: hidden;
@@ -207,7 +209,8 @@ html, body {
   position: relative;
   z-index: 10;
   width: 100%;
-  margin: 4px 0 6px 0;
+  margin: 0;
+  flex-shrink: 0;
   overflow: hidden;
 }
 
@@ -216,7 +219,7 @@ html, body {
   gap: 8px;
   overflow-x: auto;
   scroll-behavior: smooth;
-  padding: 4px 2px 8px 2px;
+  padding: 4px 2px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -227,12 +230,12 @@ html, body {
 
 .tuning-chip {
   flex: 0 0 auto;
-  padding: 6px 14px;
+  padding: 7px 15px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -248,7 +251,7 @@ html, body {
 }
 
 /* ==========================================================================
-   Medidor Central (Gauge Dial + Display)
+   Medidor Central (Gauge Dial + Display) Expansivo
    ========================================================================== */
 .tuner-main {
   position: relative;
@@ -256,16 +259,17 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-evenly;
   align-items: center;
-  max-height: 48vh;
-  margin-top: -10px;
+  width: 100%;
+  min-height: 0;
 }
 
 .meter-wrapper {
   position: relative;
-  width: min(88vw, 340px);
-  aspect-ratio: 1.4 / 1;
+  width: min(96vw, 440px);
+  aspect-ratio: 1.35 / 1;
+  max-height: 48vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -424,42 +428,42 @@ html, body {
 }
 
 .note-american {
-  font-size: min(19vw, 82px);
+  font-size: clamp(84px, 24vw, 124px);
   font-weight: 800;
-  letter-spacing: -2px;
+  letter-spacing: -3px;
   color: #ffffff;
   transition: color 0.15s ease, text-shadow 0.15s ease;
 }
 
 .note-octave {
-  font-size: min(7vw, 28px);
+  font-size: clamp(28px, 8vw, 42px);
   font-weight: 600;
   color: var(--text-dim);
   margin-left: 2px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 /* Nota Europea (Subtítulo elegante debajo de la americana) */
 .note-european {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 3px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 8px;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .eu-label {
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   letter-spacing: 1px;
   color: var(--text-dim);
   font-weight: 600;
 }
 
 .eu-name {
-  font-size: 0.88rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: 0.5px;
@@ -467,33 +471,33 @@ html, body {
 
 /* Frecuencia Hz */
 .freq-tag {
-  margin-top: 6px;
+  margin-top: 8px;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--text-dim);
   font-weight: 500;
 }
 
 .hz-unit {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   opacity: 0.7;
 }
 
 /* Estado de afinación */
 .tuning-feedback {
-  margin-top: 6px;
-  min-height: 28px;
+  margin-top: 8px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .status-badge {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
-  padding: 4px 14px;
+  padding: 5px 16px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-dim);
@@ -537,10 +541,11 @@ html, body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--bg-card-border);
-  border-radius: 24px;
-  padding: 12px 14px 14px 14px;
+  border-radius: 26px;
+  padding: clamp(10px, 1.6vh, 16px) 12px clamp(12px, 1.8vh, 16px) 12px;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
 .strings-title-row {
@@ -552,14 +557,14 @@ html, body {
 }
 
 .strings-mode-indicator {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
 .mode-pill {
-  padding: 3px 10px;
-  font-size: 0.68rem;
+  padding: 4px 12px;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.8px;
   border-radius: 12px;
@@ -581,7 +586,7 @@ html, body {
 .guitar-strings-rack {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  gap: clamp(6px, 1.5vw, 10px);
   width: 100%;
 }
 
@@ -590,10 +595,10 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 2px;
+  padding: clamp(10px, 1.6vh, 18px) 2px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 14px;
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -601,24 +606,24 @@ html, body {
 }
 
 .string-number {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .string-note-am {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
   color: #ffffff;
   line-height: 1.1;
 }
 
 .string-note-eu {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  font-weight: 500;
-  margin-top: 2px;
+  font-weight: 600;
+  margin-top: 3px;
 }
 
 .string-gauge-line {

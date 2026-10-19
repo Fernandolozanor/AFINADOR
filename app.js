@@ -316,6 +316,26 @@ class GuitarTunerApp {
       this.dom.autoModeBtn.classList.add('active');
       this.highlightString(null);
     });
+
+    // Selector de ganancia digital / Boost (+14 dB / +20 dB / 0 dB)
+    this.boostModes = [
+      { label: '+14dB', val: 5.0, active: true },
+      { label: '+20dB', val: 10.0, active: true },
+      { label: '0dB', val: 1.0, active: false }
+    ];
+    this.currentBoostIndex = 0;
+
+    const micBoostBtn = document.getElementById('micBoostBtn');
+    const boostLabel = document.getElementById('boostLabel');
+    if (micBoostBtn && boostLabel) {
+      micBoostBtn.addEventListener('click', () => {
+        this.currentBoostIndex = (this.currentBoostIndex + 1) % this.boostModes.length;
+        const mode = this.boostModes[this.currentBoostIndex];
+        this.audioProcessor.setBoostLevel(mode.val);
+        boostLabel.textContent = mode.label;
+        micBoostBtn.classList.toggle('active', mode.active);
+      });
+    }
   }
 
   async startListening() {
