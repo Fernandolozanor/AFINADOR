@@ -257,20 +257,55 @@ class GuitarTunerApp {
         <div class="string-gauge-line"></div>
       `;
 
-      card.addEventListener('click', () => {
-        if (this.selectedStringIndex === index) {
-          // Deseleccionar y volver a auto
-          this.selectedStringIndex = null;
-          this.isAutoMode = true;
-          this.dom.autoModeBtn.classList.add('active');
-          this.highlightString(null);
-        } else {
-          this.selectedStringIndex = index;
-          this.isAutoMode = false;
-          this.dom.autoModeBtn.classList.remove('active');
-          this.highlightString(index);
+      let pressStartTime = 0;
+      let isPressing = false;
+
+      const startPlay = (e) => {
+        if (isPressing) return;
+        isPressing = true;
+        pressStartTime = Date.now();
+        card.classList.add('playing-tone');
+        this.audioProcessor.startGuitarTone(str.freq);
+
+        if ('vibrate' in navigator) {
+          try { navigator.vibrate(20); } catch (err) {}
         }
-      });
+      };
+
+      const stopPlay = () => {
+        if (!isPressing) return;
+        isPressing = false;
+        card.classList.remove('playing-tone');
+        this.audioProcessor.stopGuitarTone();
+
+        const pressDuration = Date.now() - pressStartTime;
+        // Si fue un toque corto (< 280ms), alterna la selección manual de la cuerda
+        if (pressDuration < 280) {
+          if (this.selectedStringIndex === index) {
+            this.selectedStringIndex = null;
+            this.isAutoMode = true;
+            this.dom.autoModeBtn.classList.add('active');
+            this.highlightString(null);
+          } else {
+            this.selectedStringIndex = index;
+            this.isAutoMode = false;
+            this.dom.autoModeBtn.classList.remove('active');
+            this.highlightString(index);
+          }
+        }
+      };
+
+      card.addEventListener('pointerdown', startPlay);
+      card.addEventListener('pointerup', stopPlay);
+      card.addEventListener('pointercancel', stopPlay);
+      card.addEventListener('pointerleave', stopPlay);
+
+      // Respaldo para navegadores móviles
+      card.addEventListener('touchstart', (e) => {
+        startPlay(e);
+      }, { passive: true });
+      card.addEventListener('touchend', stopPlay, { passive: true });
+      card.addEventListener('touchcancel', stopPlay, { passive: true });
 
       rack.appendChild(card);
     });
@@ -335,6 +370,39 @@ class GuitarTunerApp {
         boostLabel.textContent = mode.label;
         micBoostBtn.classList.toggle('active', mode.active);
       });
+    }
+
+    // Al mantener pulsada la nota central grande, también suena su tono afinado
+    const noteDisplay = document.querySelector('.note-display-overlay');
+    if (noteDisplay) {
+      let isOverlayPressing = false;
+      const playOverlayTone = (e) => {
+        if (isOverlayPressing) return;
+        isOverlayPressing = true;
+        let targetFreq = 110.0;
+        if (this.lockedStringIndex !== null) {
+          targetFreq = this.currentTuning.strings[this.lockedStringIndex].freq;
+        } else if (this.selectedStringIndex !== null) {
+          targetFreq = this.currentTuning.strings[this.selectedStringIndex].freq;
+        }
+        this.audioProcessor.startGuitarTone(targetFreq);
+        if ('vibrate' in navigator) {
+          try { navigator.vibrate(20); } catch (err) {}
+        }
+      };
+      const stopOverlayTone = () => {
+        if (!isOverlayPressing) return;
+        isOverlayPressing = false;
+        this.audioProcessor.stopGuitarTone();
+      };
+
+      noteDisplay.addEventListener('pointerdown', playOverlayTone);
+      noteDisplay.addEventListener('pointerup', stopOverlayTone);
+      noteDisplay.addEventListener('pointerleave', stopOverlayTone);
+      noteDisplay.addEventListener('pointercancel', stopOverlayTone);
+      noteDisplay.addEventListener('touchstart', playOverlayTone, { passive: true });
+      noteDisplay.addEventListener('touchend', stopOverlayTone, { passive: true });
+      noteDisplay.addEventListener('touchcancel', stopOverlayTone, { passive: true });
     }
   }
 

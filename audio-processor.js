@@ -142,6 +142,85 @@ class AudioProcessor {
     }
   }
 
+  /**
+   * Sintetizador acústico de cuerda de guitarra con afinación exacta (para afinar de oído)
+   */
+  startGuitarTone(freq) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!this.audioCtx || this.audioCtx.state === 'closed') {
+      this.audioCtx = new AudioContextClass();
+    }
+    if (this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume().catch(() => {});
+    }
+
+    this.stopGuitarTone();
+
+    try {
+      const now = this.audioCtx.currentTime;
+
+      // 1. Oscilador fundamental (triangular para timbre de madera)
+      this.toneOsc1 = this.audioCtx.createOscillator();
+      this.toneOsc1.type = 'triangle';
+      this.toneOsc1.frequency.setValueAtTime(freq, now);
+
+      // 2. Oscilador armónico (segundo armónico para el brillo de la cuerda)
+      this.toneOsc2 = this.audioCtx.createOscillator();
+      this.toneOsc2.type = 'sine';
+      this.toneOsc2.frequency.setValueAtTime(freq * 2, now);
+
+      // 3. Filtro acústico de resonancia de caja
+      this.toneFilter = this.audioCtx.createBiquadFilter();
+      this.toneFilter.type = 'lowpass';
+      this.toneFilter.frequency.setValueAtTime(Math.min(freq * 5, 2400), now);
+      this.toneFilter.frequency.exponentialRampToValueAtTime(Math.min(freq * 2.5, 1200), now + 0.35);
+
+      // 4. Envolvente ADSR
+      this.toneGain = this.audioCtx.createGain();
+      this.toneGain.gain.setValueAtTime(0.001, now);
+      this.toneGain.gain.exponentialRampToValueAtTime(0.32, now + 0.02);
+      this.toneGain.gain.exponentialRampToValueAtTime(0.20, now + 0.28);
+
+      const osc2Gain = this.audioCtx.createGain();
+      osc2Gain.gain.value = 0.35;
+
+      this.toneOsc1.connect(this.toneFilter);
+      this.toneOsc2.connect(osc2Gain);
+      osc2Gain.connect(this.toneFilter);
+
+      this.toneFilter.connect(this.toneGain);
+      this.toneGain.connect(this.audioCtx.destination);
+
+      this.toneOsc1.start(now);
+      this.toneOsc2.start(now);
+      this.currentTonePlaying = true;
+    } catch (e) {
+      console.error("Error al sintetizar tono de cuerda:", e);
+    }
+  }
+
+  stopGuitarTone() {
+    if (!this.currentTonePlaying || !this.toneGain || !this.audioCtx) return;
+
+    try {
+      const now = this.audioCtx.currentTime;
+      this.toneGain.gain.cancelScheduledValues(now);
+      this.toneGain.gain.setValueAtTime(this.toneGain.gain.value, now);
+      this.toneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
+      const osc1 = this.toneOsc1;
+      const osc2 = this.toneOsc2;
+      setTimeout(() => {
+        try {
+          if (osc1) osc1.stop();
+          if (osc2) osc2.stop();
+        } catch (e) {}
+      }, 180);
+    } catch (e) {}
+
+    this.currentTonePlaying = false;
+  }
+
   stop() {
     if (!this.isRunning) return;
 
