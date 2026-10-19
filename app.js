@@ -130,7 +130,8 @@ class GuitarTunerApp {
       currentTuningName: document.getElementById('currentTuningName'),
       autoModeBtn: document.getElementById('autoModeBtn'),
       stringsRack: document.getElementById('stringsRack'),
-      waveCanvas: document.getElementById('waveCanvas')
+      waveCanvas: document.getElementById('waveCanvas'),
+      vuBar: document.getElementById('vuBar')
     };
 
     // Canvas de fondo
@@ -378,11 +379,17 @@ class GuitarTunerApp {
     const loop = () => {
       if (this.audioProcessor.isRunning) {
         const pitchData = this.audioProcessor.detectPitch();
-        this.processPitchData(pitchData);
-        if (pitchData && pitchData.buffer) {
-          this.drawWave(pitchData.buffer, pitchData.hasSignal);
+        if (pitchData) {
+          if (this.dom.vuBar) {
+            this.dom.vuBar.style.width = `${pitchData.volumePercent || 0}%`;
+          }
+          this.processPitchData(pitchData);
+          if (pitchData.buffer) {
+            this.drawWave(pitchData.buffer, (pitchData.volumePercent || 0) > 3);
+          }
         }
       } else {
+        if (this.dom.vuBar) this.dom.vuBar.style.width = '0%';
         this.drawWave(null, false);
       }
 
