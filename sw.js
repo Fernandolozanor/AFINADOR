@@ -1,10 +1,10 @@
-const CACHE_NAME = 'afinador-backstage-v10';
+const CACHE_NAME = 'afinador-backstage-v11';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './app.js?v=10.0',
-  './audio-processor.js?v=10.0',
+  './app.js?v=11.0',
+  './audio-processor.js?v=11.0',
   './manifest.json',
   './afinador-backstage-logo.jpg',
   './logo-afinador.svg',
