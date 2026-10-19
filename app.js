@@ -638,7 +638,7 @@ class GuitarTunerApp {
       x += sliceWidth * 2;
     }
 
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.18)';
+    ctx.strokeStyle = 'rgba(0, 136, 203, 0.35)';
     ctx.lineWidth = 1.8;
     ctx.stroke();
     ctx.restore();

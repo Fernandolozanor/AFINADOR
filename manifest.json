@@ -1,13 +1,19 @@
 {
-  "name": "Afinador Pro - Guitar Tuner",
-  "short_name": "Afinador",
-  "description": "Afinador de guitarra profesional para móvil con filtrado de ruido y detección en tiempo real.",
+  "name": "Afinador Backstage - Escuela de Música",
+  "short_name": "Afinador Backstage",
+  "description": "Afinador de guitarra profesional de Escuela Backstage con preamplificador y afinación de oído.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0b0f19",
-  "theme_color": "#0b0f19",
+  "background_color": "#06121f",
+  "theme_color": "#06121f",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "backstage-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "icon-192.svg",
       "sizes": "192x192",

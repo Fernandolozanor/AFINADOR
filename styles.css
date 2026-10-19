@@ -1,21 +1,30 @@
 :root {
-  --bg-dark: #0b0f19;
-  --bg-card: rgba(18, 24, 38, 0.75);
-  --bg-card-border: rgba(255, 255, 255, 0.08);
-  --text-main: #f3f4f6;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  --bg-dark: #06121f;
+  --bg-card: rgba(10, 26, 43, 0.82);
+  --bg-card-border: rgba(255, 255, 255, 0.09);
+  --text-main: #ffffff;
+  --text-muted: #9ebad4;
+  --text-dim: #6082a3;
+  
+  /* Paleta Oficial Escuela Backstage */
+  --backstage-magenta: #ea1b75;
+  --backstage-magenta-glow: rgba(234, 27, 117, 0.45);
+  --backstage-blue: #0088cb;
+  --backstage-blue-glow: rgba(0, 136, 203, 0.35);
+  --backstage-yellow: #ffcb05;
+  --backstage-mint: #58c7ac;
   
   /* Estados de Afinación */
-  --color-in-tune: #06d6a0;
-  --color-in-tune-glow: rgba(6, 214, 160, 0.45);
-  --color-flat: #f59e0b;
-  --color-sharp: #ef4444;
-  --color-gauge-bg: rgba(255, 255, 255, 0.07);
-  --color-accent: #38bdf8;
-  --color-accent-glow: rgba(56, 189, 248, 0.3);
+  --color-in-tune: #10e5a5;
+  --color-in-tune-glow: rgba(16, 229, 165, 0.45);
+  --color-flat: #ffcb05;
+  --color-sharp: #ea1b75;
+  --color-gauge-bg: rgba(255, 255, 255, 0.08);
+  --color-accent: #ea1b75;
+  --color-accent-glow: rgba(234, 27, 117, 0.4);
 
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-brand: 'Montserrat', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -50,7 +59,7 @@ html, body {
   overflow: hidden;
   padding: max(10px, env(safe-area-inset-top, 10px)) clamp(12px, 3.5vw, 20px) max(12px, env(safe-area-inset-bottom, 12px)) clamp(12px, 3.5vw, 20px);
   gap: clamp(6px, 1.4vh, 16px);
-  background: radial-gradient(circle at 50% 10%, #172138 0%, #0b0f19 80%);
+  background: radial-gradient(circle at 50% 10%, #0d2845 0%, #05121e 80%);
 }
 
 /* Canvas de onda en segundo plano */
@@ -66,7 +75,7 @@ html, body {
 }
 
 /* ==========================================================================
-   Header: Marca, Estado y Acciones
+   Header: Marca Escuela Backstage, Estado y Acciones
    ========================================================================== */
 .app-header {
   position: relative;
@@ -84,17 +93,18 @@ html, body {
   gap: 10px;
 }
 
-.logo-mark {
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 1px solid var(--bg-card-border);
-  border-radius: 12px;
+.logo-link {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--color-accent);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+}
+
+.backstage-logo-img {
+  height: 32px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
 .app-titles {
@@ -103,14 +113,11 @@ html, body {
 }
 
 .app-title {
-  font-size: 1.05rem;
+  font-family: var(--font-brand);
+  font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 1.5px;
   color: #ffffff;
-}
-
-.accent-dot {
-  color: var(--color-in-tune);
 }
 
 .status-level-row {
@@ -121,19 +128,19 @@ html, body {
 
 .sub-badge {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   letter-spacing: 0.5px;
   color: var(--text-muted);
   font-weight: 500;
 }
 
 .sub-badge.listening {
-  color: var(--color-in-tune);
+  color: var(--backstage-mint);
 }
 
 .vu-meter {
-  width: 50px;
-  height: 7px;
+  width: 48px;
+  height: 6px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   overflow: hidden;
@@ -143,7 +150,7 @@ html, body {
 .vu-bar {
   width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+  background: linear-gradient(90deg, var(--backstage-mint), var(--backstage-yellow), var(--backstage-magenta));
   border-radius: 4px;
   transition: width 0.06s ease-out;
 }
@@ -173,9 +180,9 @@ html, body {
 }
 
 .icon-btn.active {
-  color: var(--color-accent);
-  border-color: rgba(56, 189, 248, 0.4);
-  background: rgba(56, 189, 248, 0.1);
+  color: var(--backstage-magenta);
+  border-color: rgba(234, 27, 117, 0.45);
+  background: rgba(234, 27, 117, 0.14);
 }
 
 .badge-dot {
@@ -185,7 +192,7 @@ html, body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--backstage-magenta);
 }
 
 .power-btn {
@@ -196,10 +203,10 @@ html, body {
 }
 
 .power-btn.active {
-  color: var(--color-in-tune);
-  border-color: rgba(6, 214, 160, 0.4);
-  background: rgba(6, 214, 160, 0.12);
-  box-shadow: 0 0 16px rgba(6, 214, 160, 0.25);
+  color: var(--backstage-mint);
+  border-color: rgba(88, 199, 172, 0.4);
+  background: rgba(88, 199, 172, 0.12);
+  box-shadow: 0 0 16px rgba(88, 199, 172, 0.25);
 }
 
 /* ==========================================================================
@@ -243,10 +250,10 @@ html, body {
 }
 
 .tuning-chip.active {
-  background: #ffffff;
-  color: #0b0f19;
-  border-color: #ffffff;
-  box-shadow: 0 2px 12px rgba(255, 255, 255, 0.25);
+  background: var(--backstage-magenta);
+  color: #ffffff;
+  border-color: var(--backstage-magenta);
+  box-shadow: 0 4px 14px var(--backstage-magenta-glow);
   font-weight: 700;
 }
 
@@ -506,23 +513,23 @@ html, body {
 }
 
 .status-badge.in-tune {
-  background: rgba(6, 214, 160, 0.15);
+  background: rgba(16, 229, 165, 0.16);
   color: var(--color-in-tune);
-  border-color: rgba(6, 214, 160, 0.4);
-  box-shadow: 0 0 16px rgba(6, 214, 160, 0.3);
+  border-color: rgba(16, 229, 165, 0.45);
+  box-shadow: 0 0 16px var(--color-in-tune-glow);
   font-weight: 700;
 }
 
 .status-badge.flat {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(255, 203, 5, 0.12);
   color: var(--color-flat);
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(255, 203, 5, 0.35);
 }
 
 .status-badge.sharp {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(234, 27, 117, 0.14);
   color: var(--color-sharp);
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: rgba(234, 27, 117, 0.35);
 }
 
 /* Efecto cuando está afinado */
@@ -576,10 +583,10 @@ html, body {
 }
 
 .mode-pill.active {
-  background: var(--color-accent);
-  color: #0b0f19;
-  border-color: var(--color-accent);
-  box-shadow: 0 2px 8px var(--color-accent-glow);
+  background: var(--backstage-magenta);
+  color: #ffffff;
+  border-color: var(--backstage-magenta);
+  box-shadow: 0 2px 10px var(--backstage-magenta-glow);
 }
 
 /* Rack de las 6 Cuerdas */
@@ -644,20 +651,20 @@ html, body {
 
 /* Estados de la cuerda */
 .string-card.detected {
-  background: rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+  background: rgba(0, 136, 203, 0.18);
+  border-color: rgba(0, 136, 203, 0.5);
+  box-shadow: 0 0 14px var(--backstage-blue-glow);
   transform: translateY(-2px);
 }
 
 .string-card.detected .string-note-am {
-  color: var(--color-accent);
+  color: #38bdf8;
 }
 
 .string-card.in-tune {
-  background: rgba(6, 214, 160, 0.16);
-  border-color: rgba(6, 214, 160, 0.5);
-  box-shadow: 0 0 16px rgba(6, 214, 160, 0.35);
+  background: rgba(16, 229, 165, 0.16);
+  border-color: rgba(16, 229, 165, 0.55);
+  box-shadow: 0 0 18px var(--color-in-tune-glow);
   transform: translateY(-2px);
 }
 
@@ -671,15 +678,15 @@ html, body {
 
 /* Estado de pulsación: afinación de oído */
 .string-card.playing-tone {
-  background: rgba(56, 189, 248, 0.22) !important;
-  border-color: var(--color-accent) !important;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.5) !important;
+  background: rgba(234, 27, 117, 0.25) !important;
+  border-color: var(--backstage-magenta) !important;
+  box-shadow: 0 0 22px var(--backstage-magenta-glow) !important;
   transform: translateY(-4px) scale(1.05);
 }
 
 .string-card.playing-tone .string-note-am {
   color: #ffffff;
-  text-shadow: 0 0 12px var(--color-accent);
+  text-shadow: 0 0 12px var(--backstage-magenta);
 }
 
 @keyframes stringVibrate {
@@ -690,12 +697,12 @@ html, body {
   50% {
     transform: scaleY(3.5);
     opacity: 1;
-    filter: drop-shadow(0 0 8px var(--color-accent));
+    filter: drop-shadow(0 0 8px var(--backstage-magenta));
   }
 }
 
 .string-card.playing-tone .string-gauge-line {
-  background: var(--color-accent) !important;
+  background: var(--backstage-magenta) !important;
   animation: stringVibrate 0.08s infinite ease-in-out;
 }
 
@@ -726,61 +733,76 @@ html, body {
 }
 
 .welcome-card {
-  background: #141b2d;
-  border: 1px solid var(--bg-card-border);
+  background: #091c30;
+  border: 1px solid rgba(234, 27, 117, 0.3);
   border-radius: 28px;
-  padding: 32px 24px;
+  padding: 30px 22px;
   text-align: center;
   max-width: 340px;
   width: 100%;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(234, 27, 117, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.guitar-icon-anim {
-  width: 76px;
-  height: 76px;
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 24px;
+.welcome-logo-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-accent);
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+}
+
+.welcome-backstage-logo {
+  max-width: 160px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
 }
 
 .welcome-card h2 {
+  font-family: var(--font-brand);
   font-size: 1.45rem;
   font-weight: 800;
   color: #ffffff;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
 }
 
-.welcome-card p {
-  font-size: 0.88rem;
+.school-subtitle {
+  font-family: var(--font-brand);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--backstage-yellow);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.school-desc {
+  font-size: 0.85rem;
   line-height: 1.5;
   color: var(--text-muted);
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .start-btn {
   width: 100%;
   padding: 14px 20px;
-  background: linear-gradient(135deg, #06d6a0, #059669);
+  background: linear-gradient(135deg, #ea1b75, #bd105b);
   border: none;
   border-radius: 16px;
-  color: #0b0f19;
-  font-size: 1rem;
-  font-weight: 700;
+  color: #ffffff;
+  font-family: var(--font-brand);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-shadow: 0 6px 20px rgba(6, 214, 160, 0.4);
+  box-shadow: 0 6px 22px rgba(234, 27, 117, 0.5);
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 

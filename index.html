@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0b0e14">
+  <meta name="theme-color" content="#06121f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Afinador Pro - Afinador de Guitarra Móvil</title>
+  <title>Afinador de Guitarra | Escuela Backstage</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" type="image/svg+xml" href="icon-192.svg">
-  <link rel="apple-touch-icon" href="icon-192.svg">
+  <link rel="icon" type="image/png" href="backstage-icon.png">
+  <link rel="apple-touch-icon" href="backstage-icon.png">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -23,15 +23,11 @@
     <!-- Barra superior: Afinaciones rápidas y configuración -->
     <header class="app-header">
       <div class="header-left">
-        <div class="logo-mark">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18V5l12-2v13"></path>
-            <circle cx="6" cy="18" r="3"></circle>
-            <circle cx="18" cy="16" r="3"></circle>
-          </svg>
-        </div>
+        <a href="https://www.escuelabackstage.com" target="_blank" rel="noopener noreferrer" class="logo-link" title="Escuela Backstage">
+          <img src="backstage-logo.png" alt="Escuela Backstage" class="backstage-logo-img">
+        </a>
         <div class="app-titles">
-          <span class="app-title">AFINADOR<span class="accent-dot">.</span>PRO</span>
+          <span class="app-title">AFINADOR</span>
           <div class="status-level-row">
             <span class="sub-badge" id="signalStatus">MIC EN ESPERA</span>
             <div class="vu-meter" id="vuMeter" title="Nivel de entrada del micrófono">
@@ -78,13 +74,13 @@
         <svg class="gauge-svg" viewBox="0 0 320 230">
           <defs>
             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#ef4444" />
-              <stop offset="35%" stop-color="#f59e0b" />
-              <stop offset="47%" stop-color="#10b981" />
-              <stop offset="50%" stop-color="#06d6a0" />
-              <stop offset="53%" stop-color="#10b981" />
-              <stop offset="65%" stop-color="#f59e0b" />
-              <stop offset="100%" stop-color="#ef4444" />
+              <stop offset="0%" stop-color="#ea1b75" />
+              <stop offset="35%" stop-color="#ffcb05" />
+              <stop offset="47%" stop-color="#58c7ac" />
+              <stop offset="50%" stop-color="#10e5a5" />
+              <stop offset="53%" stop-color="#58c7ac" />
+              <stop offset="65%" stop-color="#ffcb05" />
+              <stop offset="100%" stop-color="#ea1b75" />
             </linearGradient>
             <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="6" result="blur" />
@@ -162,16 +158,14 @@
     <!-- Overlay de Permiso de Micrófono / Primer toque -->
     <div class="welcome-overlay" id="welcomeOverlay">
       <div class="welcome-card">
-        <div class="guitar-icon-anim">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v20M8 6l8 12M16 6L8 18"></path>
-            <circle cx="12" cy="12" r="9"></circle>
-          </svg>
+        <div class="welcome-logo-container">
+          <img src="backstage-logo.png" alt="Escuela Backstage" class="welcome-backstage-logo">
         </div>
-        <h2>Afinador Móvil Pro</h2>
-        <p>Afinación de alta precisión con filtrado inteligente de ruido ambiental y detección en tiempo real.</p>
+        <h2>Afinador de Guitarra</h2>
+        <p class="school-subtitle">ESCUELA DE MÚSICA Y DANZA · RIVAS</p>
+        <p class="school-desc">Afinación de alta precisión en tiempo real con preamplificador digital y síntesis acústica de cuerda para afinar de oído.</p>
         <button id="startAppBtn" class="start-btn">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
           Comenzar a Afinar
@@ -181,12 +175,12 @@
     </div>
   </div>
 
-  <script src="audio-processor.js?v=7.0"></script>
-  <script src="app.js?v=7.0"></script>
+  <script src="audio-processor.js?v=8.0"></script>
+  <script src="app.js?v=8.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=7.0').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=8.0').then(reg => {
           reg.update();
         }).catch(() => {});
       });
