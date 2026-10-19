@@ -257,36 +257,58 @@ class GuitarTunerApp {
         <div class="string-gauge-line"></div>
       `;
 
-      let pressStartTime = 0;
+      let holdTimer = null;
+      let hasPlayedTone = false;
       let isPressing = false;
 
-      const startPlay = (e) => {
+      const handlePressStart = (e) => {
         if (isPressing) return;
         isPressing = true;
-        pressStartTime = Date.now();
-        card.classList.add('playing-tone');
-        this.audioProcessor.startGuitarTone(str.freq);
+        hasPlayedTone = false;
 
-        if ('vibrate' in navigator) {
-          try { navigator.vibrate(20); } catch (err) {}
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
         }
+
+        // Solo suena si se mantiene pulsado más de 380ms (afinación de oído)
+        holdTimer = setTimeout(() => {
+          if (!isPressing) return;
+          hasPlayedTone = true;
+          card.classList.add('playing-tone');
+          this.audioProcessor.startGuitarTone(str.freq);
+
+          if ('vibrate' in navigator) {
+            try { navigator.vibrate(25); } catch (err) {}
+          }
+        }, 380);
       };
 
-      const stopPlay = () => {
+      const handlePressEnd = (e) => {
         if (!isPressing) return;
         isPressing = false;
-        card.classList.remove('playing-tone');
-        this.audioProcessor.stopGuitarTone();
 
-        const pressDuration = Date.now() - pressStartTime;
-        // Si fue un toque corto (< 280ms), alterna la selección manual de la cuerda
-        if (pressDuration < 280) {
+        // Cancelar temporizador si se soltó antes del umbral de pulsación larga
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+
+        if (hasPlayedTone) {
+          // Detener el sonido de la cuerda
+          hasPlayedTone = false;
+          card.classList.remove('playing-tone');
+          this.audioProcessor.stopGuitarTone();
+        } else {
+          // Pulsación corta / toque rápido: SELECCIONA LA CUERDA EN SILENCIO
           if (this.selectedStringIndex === index) {
+            // Deseleccionar y volver a AUTO
             this.selectedStringIndex = null;
             this.isAutoMode = true;
             this.dom.autoModeBtn.classList.add('active');
             this.highlightString(null);
           } else {
+            // Seleccionar esta cuerda manualmente
             this.selectedStringIndex = index;
             this.isAutoMode = false;
             this.dom.autoModeBtn.classList.remove('active');
@@ -295,17 +317,19 @@ class GuitarTunerApp {
         }
       };
 
-      card.addEventListener('pointerdown', startPlay);
-      card.addEventListener('pointerup', stopPlay);
-      card.addEventListener('pointercancel', stopPlay);
-      card.addEventListener('pointerleave', stopPlay);
-
-      // Respaldo para navegadores móviles
-      card.addEventListener('touchstart', (e) => {
-        startPlay(e);
-      }, { passive: true });
-      card.addEventListener('touchend', stopPlay, { passive: true });
-      card.addEventListener('touchcancel', stopPlay, { passive: true });
+      if (window.PointerEvent) {
+        card.addEventListener('pointerdown', handlePressStart);
+        card.addEventListener('pointerup', handlePressEnd);
+        card.addEventListener('pointercancel', handlePressEnd);
+        card.addEventListener('pointerleave', handlePressEnd);
+      } else {
+        card.addEventListener('touchstart', handlePressStart, { passive: true });
+        card.addEventListener('touchend', handlePressEnd, { passive: true });
+        card.addEventListener('touchcancel', handlePressEnd, { passive: true });
+        card.addEventListener('mousedown', handlePressStart);
+        card.addEventListener('mouseup', handlePressEnd);
+        card.addEventListener('mouseleave', handlePressEnd);
+      }
 
       rack.appendChild(card);
     });
