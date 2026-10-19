@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0e14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Afinador Pro - Afinador de Guitarra Móvil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="icon-192.svg">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Fondo visual interactivo con onda de sonido -->
+    <canvas id="waveCanvas" class="wave-background"></canvas>
+
+    <!-- Barra superior: Afinaciones rápidas y configuración -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-mark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+        <div class="app-titles">
+          <span class="app-title">AFINADOR<span class="accent-dot">.</span>PRO</span>
+          <span class="sub-badge" id="signalStatus">MIC EN ESPERA</span>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Selector de sensibilidad / filtro de ruido -->
+        <button id="noiseFilterBtn" class="icon-btn active" title="Filtro anti-ruido ambiental">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" x2="12" y1="19" y2="22"></line>
+          </svg>
+          <span class="badge-dot"></span>
+        </button>
+        <!-- Botón de Encendido / Escucha -->
+        <button id="powerBtn" class="power-btn" title="Iniciar micrófono">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Barra de afinaciones rápidas (Scrollable) -->
+    <nav class="tunings-bar" id="tuningsBar">
+      <div class="tunings-track" id="tuningsTrack">
+        <!-- Inyectado dinámicamente -->
+      </div>
+    </nav>
+
+    <!-- Medidor Principal de Afinación (Gauge Dial) -->
+    <main class="tuner-main">
+      <div class="meter-wrapper">
+        <svg class="gauge-svg" viewBox="0 0 320 230">
+          <defs>
+            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#ef4444" />
+              <stop offset="35%" stop-color="#f59e0b" />
+              <stop offset="47%" stop-color="#10b981" />
+              <stop offset="50%" stop-color="#06d6a0" />
+              <stop offset="53%" stop-color="#10b981" />
+              <stop offset="65%" stop-color="#f59e0b" />
+              <stop offset="100%" stop-color="#ef4444" />
+            </linearGradient>
+            <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          <!-- Arco base de fondo -->
+          <path class="gauge-arc-bg" d="M 40 180 A 120 120 0 0 1 280 180" fill="none" stroke-width="8" stroke-linecap="round"/>
+          
+          <!-- Marcas de ticks graduados -->
+          <g id="gaugeTicks" class="gauge-ticks"></g>
+
+          <!-- Centro exacto (punto cero de afinado) -->
+          <circle cx="160" cy="55" r="4" class="center-target-pip" />
+          <line x1="160" y1="46" x2="160" y2="70" class="center-target-line" />
+
+          <!-- Aguja indicadora estilizada -->
+          <g id="gaugeNeedle" class="gauge-needle" transform="rotate(0 160 180)">
+            <line x1="160" y1="180" x2="160" y2="60" class="needle-body" />
+            <circle cx="160" cy="56" r="5" class="needle-head" />
+            <circle cx="160" cy="180" r="10" class="needle-pivot" />
+          </g>
+        </svg>
+
+        <!-- Display Central de Notas -->
+        <div class="note-display-overlay">
+          <!-- Desviación en Cents con flechitas laterales -->
+          <div class="cents-wrapper" id="centsWrapper">
+            <span class="cents-indicator left-arrow" id="flatIndicator">◀</span>
+            <span class="cents-val" id="centsValue">0</span>
+            <span class="cents-label">CENTS</span>
+            <span class="cents-indicator right-arrow" id="sharpIndicator">▶</span>
+          </div>
+
+          <!-- Nota Americana (Gigante) -->
+          <div class="note-american-container">
+            <span class="note-american" id="noteAmerican">-</span>
+            <span class="note-octave" id="noteOctave"></span>
+          </div>
+
+          <!-- Nota Europea (Subtítulo elegante) -->
+          <div class="note-european" id="noteEuropean">
+            <span class="eu-label">NOTACIÓN:</span>
+            <span class="eu-name" id="euNoteName">-</span>
+          </div>
+
+          <!-- Frecuencia en Hz -->
+          <div class="freq-tag">
+            <span id="freqValue">00.0</span> <span class="hz-unit">Hz</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado de afinación textual y Feedback lumínico -->
+      <div class="tuning-feedback" id="tuningFeedback">
+        <span class="status-badge">Toca una cuerda</span>
+      </div>
+    </main>
+
+    <!-- Selector / Visualizador de Cuerdas de la Guitarra -->
+    <footer class="strings-footer">
+      <div class="strings-title-row">
+        <span class="strings-mode-indicator" id="currentTuningName">Estándar (E A D G B E)</span>
+        <button id="autoModeBtn" class="mode-pill active" title="Detección automática de cuerda">AUTO</button>
+      </div>
+
+      <div class="guitar-strings-rack" id="stringsRack">
+        <!-- 6 cuerdas interactivas generadas dinámicamente -->
+      </div>
+    </footer>
+
+    <!-- Overlay de Permiso de Micrófono / Primer toque -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+      <div class="welcome-card">
+        <div class="guitar-icon-anim">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M8 6l8 12M16 6L8 18"></path>
+            <circle cx="12" cy="12" r="9"></circle>
+          </svg>
+        </div>
+        <h2>Afinador Móvil Pro</h2>
+        <p>Afinación de alta precisión con filtrado inteligente de ruido ambiental y detección en tiempo real.</p>
+        <button id="startAppBtn" class="start-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Comenzar a Afinar
+        </button>
+        <span class="audio-notice">Requiere acceso al micrófono del dispositivo</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio-processor.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

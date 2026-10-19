@@ -1,0 +1,752 @@
+:root {
+  --bg-dark: #0b0f19;
+  --bg-card: rgba(18, 24, 38, 0.75);
+  --bg-card-border: rgba(255, 255, 255, 0.08);
+  --text-main: #f3f4f6;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  
+  /* Estados de Afinación */
+  --color-in-tune: #06d6a0;
+  --color-in-tune-glow: rgba(6, 214, 160, 0.45);
+  --color-flat: #f59e0b;
+  --color-sharp: #ef4444;
+  --color-gauge-bg: rgba(255, 255, 255, 0.07);
+  --color-accent: #38bdf8;
+  --color-accent-glow: rgba(56, 189, 248, 0.3);
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  touch-action: manipulation;
+  position: fixed;
+}
+
+/* Contenedor Única Pantalla (100dvh para Safari/Chrome en Móviles) */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100vw;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  padding: env(safe-area-inset-top, 12px) 16px env(safe-area-inset-bottom, 14px) 16px;
+  background: radial-gradient(circle at 50% 10%, #172138 0%, #0b0f19 80%);
+}
+
+/* Canvas de onda en segundo plano */
+.wave-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+}
+
+/* ==========================================================================
+   Header: Marca, Estado y Acciones
+   ========================================================================== */
+.app-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px 6px 4px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-mark {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.app-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+}
+
+.accent-dot {
+  color: var(--color-in-tune);
+}
+
+.sub-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.sub-badge.listening {
+  color: var(--color-in-tune);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-btn, .power-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-muted);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+}
+
+.icon-btn.active {
+  color: var(--color-accent);
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.badge-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.power-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  color: var(--text-muted);
+}
+
+.power-btn.active {
+  color: var(--color-in-tune);
+  border-color: rgba(6, 214, 160, 0.4);
+  background: rgba(6, 214, 160, 0.12);
+  box-shadow: 0 0 16px rgba(6, 214, 160, 0.25);
+}
+
+/* ==========================================================================
+   Barra de Afinaciones Rápidas (Chips / Pills)
+   ========================================================================== */
+.tunings-bar {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  margin: 4px 0 6px 0;
+  overflow: hidden;
+}
+
+.tunings-track {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 4px 2px 8px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tunings-track::-webkit-scrollbar {
+  display: none;
+}
+
+.tuning-chip {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tuning-chip.active {
+  background: #ffffff;
+  color: #0b0f19;
+  border-color: #ffffff;
+  box-shadow: 0 2px 12px rgba(255, 255, 255, 0.25);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Medidor Central (Gauge Dial + Display)
+   ========================================================================== */
+.tuner-main {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  max-height: 48vh;
+  margin-top: -10px;
+}
+
+.meter-wrapper {
+  position: relative;
+  width: min(88vw, 340px);
+  aspect-ratio: 1.4 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4));
+}
+
+.gauge-arc-bg {
+  stroke: var(--color-gauge-bg);
+  stroke-dasharray: 4 6;
+}
+
+.gauge-tick {
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.gauge-tick.major {
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 2.2;
+}
+
+.gauge-tick.center-tick {
+  stroke: var(--color-in-tune);
+  stroke-width: 3;
+}
+
+.center-target-pip {
+  fill: var(--color-in-tune);
+  filter: drop-shadow(0 0 6px var(--color-in-tune));
+}
+
+.center-target-line {
+  stroke: var(--color-in-tune);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+/* Aguja */
+.gauge-needle {
+  transform-origin: 160px 180px;
+  transition: transform 0.08s linear;
+}
+
+.needle-body {
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+}
+
+.needle-head {
+  fill: #ffffff;
+  stroke: rgba(0, 0, 0, 0.5);
+  stroke-width: 1;
+}
+
+.needle-pivot {
+  fill: #1e293b;
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 2;
+}
+
+/* Variaciones de color de la aguja según desviación */
+.meter-wrapper.in-tune .needle-body,
+.meter-wrapper.in-tune .needle-head {
+  stroke: var(--color-in-tune);
+  fill: var(--color-in-tune);
+  filter: drop-shadow(0 0 10px var(--color-in-tune));
+}
+
+.meter-wrapper.flat .needle-body,
+.meter-wrapper.flat .needle-head {
+  stroke: var(--color-flat);
+  fill: var(--color-flat);
+}
+
+.meter-wrapper.sharp .needle-body,
+.meter-wrapper.sharp .needle-head {
+  stroke: var(--color-sharp);
+  fill: var(--color-sharp);
+}
+
+/* Display de notas centrado dentro del arco */
+.note-display-overlay {
+  position: absolute;
+  top: 36%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Indicador de Cents y flechas */
+.cents-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.cents-val {
+  font-weight: 600;
+  font-size: 1.1rem;
+  min-width: 38px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.cents-label {
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+}
+
+.cents-indicator {
+  opacity: 0.15;
+  transition: opacity 0.2s, color 0.2s;
+  font-size: 0.8rem;
+}
+
+.cents-indicator.active {
+  opacity: 1;
+}
+
+#flatIndicator.active {
+  color: var(--color-flat);
+  filter: drop-shadow(0 0 6px var(--color-flat));
+}
+
+#sharpIndicator.active {
+  color: var(--color-sharp);
+  filter: drop-shadow(0 0 6px var(--color-sharp));
+}
+
+/* Gran Nota Americana */
+.note-american-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1;
+}
+
+.note-american {
+  font-size: min(19vw, 82px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  color: #ffffff;
+  transition: color 0.15s ease, text-shadow 0.15s ease;
+}
+
+.note-octave {
+  font-size: min(7vw, 28px);
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-left: 2px;
+  margin-top: 6px;
+}
+
+/* Nota Europea (Subtítulo elegante debajo de la americana) */
+.note-european {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eu-label {
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.eu-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.5px;
+}
+
+/* Frecuencia Hz */
+.freq-tag {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.hz-unit {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* Estado de afinación */
+.tuning-feedback {
+  margin-top: 6px;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.25s ease;
+}
+
+.status-badge.in-tune {
+  background: rgba(6, 214, 160, 0.15);
+  color: var(--color-in-tune);
+  border-color: rgba(6, 214, 160, 0.4);
+  box-shadow: 0 0 16px rgba(6, 214, 160, 0.3);
+  font-weight: 700;
+}
+
+.status-badge.flat {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-flat);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.sharp {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-sharp);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Efecto cuando está afinado */
+.meter-wrapper.in-tune .note-american {
+  color: var(--color-in-tune);
+  text-shadow: 0 0 24px var(--color-in-tune-glow);
+}
+
+/* ==========================================================================
+   Footer: Clavijero / Cuerdas de la Guitarra
+   ========================================================================== */
+.strings-footer {
+  position: relative;
+  z-index: 10;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 24px;
+  padding: 12px 14px 14px 14px;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
+  margin-bottom: 2px;
+}
+
+.strings-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+
+.strings-mode-indicator {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.mode-pill {
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-pill.active {
+  background: var(--color-accent);
+  color: #0b0f19;
+  border-color: var(--color-accent);
+  box-shadow: 0 2px 8px var(--color-accent-glow);
+}
+
+/* Rack de las 6 Cuerdas */
+.guitar-strings-rack {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.string-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 2px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.string-number {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.string-note-am {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.string-note-eu {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.string-gauge-line {
+  width: 80%;
+  margin-top: 6px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+/* Grosor de las cuerdas realista */
+.string-card[data-index="0"] .string-gauge-line { height: 4px; }
+.string-card[data-index="1"] .string-gauge-line { height: 3.4px; }
+.string-card[data-index="2"] .string-gauge-line { height: 2.8px; }
+.string-card[data-index="3"] .string-gauge-line { height: 2.2px; }
+.string-card[data-index="4"] .string-gauge-line { height: 1.6px; }
+.string-card[data-index="5"] .string-gauge-line { height: 1.2px; }
+
+/* Estados de la cuerda */
+.string-card.detected {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+  transform: translateY(-2px);
+}
+
+.string-card.detected .string-note-am {
+  color: var(--color-accent);
+}
+
+.string-card.in-tune {
+  background: rgba(6, 214, 160, 0.16);
+  border-color: rgba(6, 214, 160, 0.5);
+  box-shadow: 0 0 16px rgba(6, 214, 160, 0.35);
+  transform: translateY(-2px);
+}
+
+.string-card.in-tune .string-note-am {
+  color: var(--color-in-tune);
+}
+
+.string-card.in-tune .string-gauge-line {
+  background: linear-gradient(90deg, transparent, var(--color-in-tune), transparent);
+}
+
+/* ==========================================================================
+   Overlay de Bienvenida y Solicitud de Micro
+   ========================================================================== */
+.welcome-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  background: rgba(11, 15, 25, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.welcome-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.welcome-card {
+  background: #141b2d;
+  border: 1px solid var(--bg-card-border);
+  border-radius: 28px;
+  padding: 32px 24px;
+  text-align: center;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.guitar-icon-anim {
+  width: 76px;
+  height: 76px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  margin-bottom: 20px;
+}
+
+.welcome-card h2 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.welcome-card p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.start-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #06d6a0, #059669);
+  border: none;
+  border-radius: 16px;
+  color: #0b0f19;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 6px 20px rgba(6, 214, 160, 0.4);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.start-btn:active {
+  transform: scale(0.98);
+  filter: brightness(0.9);
+}
+
+.audio-notice {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 14px;
+}
+
+/* Pantallas pequeñas / iPhone SE */
+@media (max-height: 680px) {
+  .app-container {
+    padding: 8px 12px 10px 12px;
+  }
+  .meter-wrapper {
+    width: min(84vw, 290px);
+  }
+  .note-american {
+    font-size: 64px;
+  }
+  .strings-footer {
+    padding: 8px 10px;
+  }
+  .string-card {
+    padding: 6px 2px;
+  }
+}

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="192" height="192">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0b0f19" />
+    </radialGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#06d6a0" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)" />
+  <rect width="504" height="504" x="4" y="4" rx="106" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" />
+  <path d="M 120 330 A 150 150 0 0 1 392 330" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="16" stroke-linecap="round" stroke-dasharray="8 12" />
+  <path d="M 236 180 A 150 150 0 0 1 276 180" fill="none" stroke="#06d6a0" stroke-width="16" stroke-linecap="round" />
+  <g stroke="url(#accentGrad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 256 160 L 256 380" />
+    <circle cx="256" cy="160" r="14" fill="#06d6a0" />
+    <path d="M 190 220 L 322 220" />
+    <circle cx="190" cy="220" r="8" fill="#38bdf8" />
+    <circle cx="322" cy="220" r="8" fill="#38bdf8" />
+    <path d="M 190 280 L 322 280" />
+    <circle cx="190" cy="280" r="8" fill="#38bdf8" />
+    <circle cx="322" cy="280" r="8" fill="#38bdf8" />
+  </g>
+</svg>
