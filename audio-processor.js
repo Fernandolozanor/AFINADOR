@@ -143,7 +143,76 @@ class AudioProcessor {
   }
 
   /**
-   * Sintetizador acústico de cuerda de guitarra con afinación exacta (para afinar de oído)
+   * Síntesis física Karplus-Strong: emula la física real de una cuerda de guitarra
+   * punteada con púa y la resonancia de la caja de madera acústica.
+   */
+  getPluckBuffer(freq) {
+    if (!this.pluckCache) this.pluckCache = new Map();
+    const key = Math.round(freq * 10);
+    if (this.pluckCache.has(key)) {
+      return this.pluckCache.get(key);
+    }
+
+    const sampleRate = (this.audioCtx && this.audioCtx.sampleRate) ? this.audioCtx.sampleRate : 44100;
+    const duration = 3.5; // Duración natural de la resonancia de una guitarra (3.5s)
+    const numSamples = Math.floor(sampleRate * duration);
+    const buffer = this.audioCtx.createBuffer(1, numSamples, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    // Periodo fundamental en muestras con precisión decimal
+    const period = sampleRate / freq;
+    const intPeriod = Math.floor(period);
+    const frac = period - intPeriod; // Interpolación fraccional para afinación exacta
+
+    // Factor de amortiguación acústico: cuerdas graves tienen más sustain que las agudas
+    // Cuerda 6 (82 Hz) ~ 0.9965, Cuerda 1 (330 Hz) ~ 0.992
+    const decayFactor = Math.max(0.988, Math.min(0.997, 0.9972 - (freq / 1000) * 0.012));
+
+    // 1. Excitación inicial: Ataque percusivo de púa (Pick Impulse)
+    const impulseLength = Math.min(intPeriod, Math.floor(sampleRate * 0.007));
+    for (let i = 0; i < impulseLength; i++) {
+      // Ruido rosa con envolvente Hann: simula el raspado de la púa en el entorchado
+      const env = 0.5 * (1 - Math.cos((2 * Math.PI * i) / impulseLength));
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
+
+    // 2. Bucle Karplus-Strong con filtro paso-bajo promediador de 2 puntos
+    let prevSample = 0;
+    for (let i = intPeriod; i < numSamples; i++) {
+      const idxA = i - intPeriod;
+      const idxB = idxA - 1;
+      const valA = data[idxA];
+      const valB = idxB >= 0 ? data[idxB] : 0;
+
+      // Retardo con interpolación fraccional para afinar a 0.1 Hz exactos
+      const delayed = valA * (1 - frac) + valB * frac;
+
+      // Pérdida natural de la cuerda: las altas frecuencias mueren más rápido que los graves
+      const filtered = 0.5 * (delayed + prevSample) * decayFactor;
+      prevSample = delayed;
+
+      data[i] = filtered;
+    }
+
+    // 3. Normalizar volumen y añadir calidez acústica
+    let peak = 0;
+    for (let i = 0; i < numSamples; i++) {
+      const abs = Math.abs(data[i]);
+      if (abs > peak) peak = abs;
+    }
+    if (peak > 0) {
+      const targetGain = 0.85 / peak;
+      for (let i = 0; i < numSamples; i++) {
+        data[i] *= targetGain;
+      }
+    }
+
+    this.pluckCache.set(key, buffer);
+    return buffer;
+  }
+
+  /**
+   * Reproduce una pulsación real de guitarra acústica (Pluck)
    */
   startGuitarTone(freq) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -158,64 +227,80 @@ class AudioProcessor {
 
     try {
       const now = this.audioCtx.currentTime;
+      const pluckBuffer = this.getPluckBuffer(freq);
 
-      // 1. Oscilador fundamental (triangular para timbre de madera)
-      this.toneOsc1 = this.audioCtx.createOscillator();
-      this.toneOsc1.type = 'triangle';
-      this.toneOsc1.frequency.setValueAtTime(freq, now);
+      // Reproductor de buffer PCM de cuerda
+      this.activePluckSource = this.audioCtx.createBufferSource();
+      this.activePluckSource.buffer = pluckBuffer;
 
-      // 2. Oscilador armónico (segundo armónico para el brillo de la cuerda)
-      this.toneOsc2 = this.audioCtx.createOscillator();
-      this.toneOsc2.type = 'sine';
-      this.toneOsc2.frequency.setValueAtTime(freq * 2, now);
+      // Filtro de resonancia de tapa armónica de guitarra (madera a ~110 Hz y ~220 Hz)
+      const bodyFilter = this.audioCtx.createBiquadFilter();
+      bodyFilter.type = 'peaking';
+      bodyFilter.frequency.value = 160;
+      bodyFilter.Q.value = 1.0;
+      bodyFilter.gain.value = 3.5;
 
-      // 3. Filtro acústico de resonancia de caja
-      this.toneFilter = this.audioCtx.createBiquadFilter();
-      this.toneFilter.type = 'lowpass';
-      this.toneFilter.frequency.setValueAtTime(Math.min(freq * 5, 2400), now);
-      this.toneFilter.frequency.exponentialRampToValueAtTime(Math.min(freq * 2.5, 1200), now + 0.35);
+      // Control de volumen de salida
+      this.pluckGain = this.audioCtx.createGain();
+      this.pluckGain.gain.setValueAtTime(0.9, now);
 
-      // 4. Envolvente ADSR
-      this.toneGain = this.audioCtx.createGain();
-      this.toneGain.gain.setValueAtTime(0.001, now);
-      this.toneGain.gain.exponentialRampToValueAtTime(0.32, now + 0.02);
-      this.toneGain.gain.exponentialRampToValueAtTime(0.20, now + 0.28);
+      this.activePluckSource.connect(bodyFilter);
+      bodyFilter.connect(this.pluckGain);
+      this.pluckGain.connect(this.audioCtx.destination);
 
-      const osc2Gain = this.audioCtx.createGain();
-      osc2Gain.gain.value = 0.35;
-
-      this.toneOsc1.connect(this.toneFilter);
-      this.toneOsc2.connect(osc2Gain);
-      osc2Gain.connect(this.toneFilter);
-
-      this.toneFilter.connect(this.toneGain);
-      this.toneGain.connect(this.audioCtx.destination);
-
-      this.toneOsc1.start(now);
-      this.toneOsc2.start(now);
+      this.activePluckSource.start(now);
       this.currentTonePlaying = true;
+
+      // Si el usuario mantiene pulsado, re-puntear suavemente la cuerda cada 2.8s
+      this.pluckLoopTimer = setInterval(() => {
+        if (this.currentTonePlaying) {
+          this.triggerGentleRepluck(freq);
+        }
+      }, 2800);
     } catch (e) {
-      console.error("Error al sintetizar tono de cuerda:", e);
+      console.error("Error al reproducir pulsación de guitarra:", e);
     }
   }
 
-  stopGuitarTone() {
-    if (!this.currentTonePlaying || !this.toneGain || !this.audioCtx) return;
-
+  triggerGentleRepluck(freq) {
+    if (!this.audioCtx || !this.currentTonePlaying) return;
     try {
       const now = this.audioCtx.currentTime;
-      this.toneGain.gain.cancelScheduledValues(now);
-      this.toneGain.gain.setValueAtTime(this.toneGain.gain.value, now);
-      this.toneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      const buffer = this.getPluckBuffer(freq);
+      const src = this.audioCtx.createBufferSource();
+      src.buffer = buffer;
 
-      const osc1 = this.toneOsc1;
-      const osc2 = this.toneOsc2;
+      const gain = this.audioCtx.createGain();
+      gain.gain.setValueAtTime(0.75, now);
+
+      src.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      src.start(now);
+    } catch (e) {}
+  }
+
+  stopGuitarTone() {
+    if (this.pluckLoopTimer) {
+      clearInterval(this.pluckLoopTimer);
+      this.pluckLoopTimer = null;
+    }
+
+    if (!this.currentTonePlaying || !this.audioCtx) return;
+
+    try {
+      if (this.pluckGain) {
+        const now = this.audioCtx.currentTime;
+        this.pluckGain.gain.cancelScheduledValues(now);
+        this.pluckGain.gain.setValueAtTime(this.pluckGain.gain.value, now);
+        this.pluckGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15); // Palm mute suave
+      }
+
+      const src = this.activePluckSource;
       setTimeout(() => {
         try {
-          if (osc1) osc1.stop();
-          if (osc2) osc2.stop();
+          if (src) src.stop();
         } catch (e) {}
-      }, 180);
+      }, 160);
     } catch (e) {}
 
     this.currentTonePlaying = false;
